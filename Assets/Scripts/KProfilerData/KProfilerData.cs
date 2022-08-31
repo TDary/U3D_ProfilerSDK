@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.IO;
 using System.Text.RegularExpressions;
-using Kingsoft.Test.BBF.Xml;
 using System.Text;
 #if UNITY_2019_1_OR_NEWER
 using UnityEditor.Profiling;
@@ -58,7 +57,6 @@ namespace KProfilerData
     {
         public List<KBaseData> kBaseDataList;
 
-        [KXmlIgnoreAttribute]
         public int size { get; set; }
         public KBaseDatas()
         {
@@ -98,11 +96,7 @@ namespace KProfilerData
         public string CPUTotalTime { get; set; }
 
         public string GPUTotalTime { get; set; }
-
-        [KXmlIgnoreAttribute]
         private const int DEFAULT_VALUE = 0;
-
-        [KXmlIgnoreAttribute]
         public int size { get; set; }
 
         public KBaseData()
@@ -136,7 +130,6 @@ namespace KProfilerData
     {
         public List<KAreaData> kAreaDataList;
 
-        [KXmlIgnoreAttribute]
         public int size { get; set; }
 
         public KAreaDatas()
@@ -169,7 +162,6 @@ namespace KProfilerData
 
         public string str_Data { get; set; }
 
-        [KXmlIgnoreAttribute]
         public int size { get; set; }
 
         public KAreaData()
@@ -182,7 +174,6 @@ namespace KProfilerData
     {
         public List<KFunctionData> kFunctionStackData;
 
-        [KXmlIgnoreAttribute]
         public int size { get; set; }
         public KFunctionDatas()
         {
@@ -216,8 +207,6 @@ namespace KProfilerData
     public class KTimeLineDatas
     {
         public List<KTimeLineData> kTimeLineData;
-
-        [KXmlIgnoreAttribute]
         public int size { get; set; }
         public KTimeLineDatas()
         {
@@ -269,8 +258,6 @@ namespace KProfilerData
         public double SelfGPUPercent;
         public double WarningCount;
         public string ObjectName;
-
-        [KXmlIgnoreAttribute]
         public int size { get; set; }
         public KFunctionData()
         {
@@ -441,8 +428,6 @@ namespace KProfilerData
         public int depth;
         public int threadID;
         public int GroupID;
-
-        [KXmlIgnoreAttribute]
         public int size { get; set; }
         public KTimeLineData()
         {

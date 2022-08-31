@@ -69,32 +69,6 @@ public class CommonTools
     //    return hash;
     //}
 
-    public static uint GenerateGUIDUint()
-    {
-        string shardField = Guid.NewGuid().ToString();
-        uint code = 0;
-        shardField = shardField.Trim();
-        for (int i = 0; i < shardField.Length; i += 2)
-        {
-            code *= 16777619;
-            code ^= shardField[i];
-        }
-
-        return code;
-    }
-
-    public static long GenerateGUIDLong()
-    {
-        uint h = CommonTools.GenerateGUIDUint();
-        uint l = CommonTools.GenerateGUIDUint();
-        long t = ((long)h << 32);
-        long code = t + (long)l;
-
-        return code;
-    }
-
-
-
     /// <summary>
     /// 取得真实的本地时间(从格林威治19700101开始算) 单位秒
     /// </summary>
