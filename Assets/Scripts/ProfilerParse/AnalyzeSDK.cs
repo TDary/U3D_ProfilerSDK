@@ -10,6 +10,7 @@ using OProfilerData;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Profiling;
+using static ParseFuntion;
 
 namespace Analyze
 {
@@ -95,7 +96,7 @@ namespace Analyze
 
             #region 杂项
             Dictionary<string, int> allfun = new Dictionary<string, int>();
-            ProfilerTree prt = new ProfilerTree();
+            ProfilerTrees prt = new ProfilerTrees();
             prt.shieldSwitch = shieldSwitch;
             TimeLineFunData ren = new TimeLineFunData();
             Dictionary<string, string> funcnameReplace = new Dictionary<string, string>();
@@ -114,32 +115,32 @@ namespace Analyze
                     continue;
                 }
 
-                KProfilerHelper.GetProfilerProperty(f, ref profilerProperty);
+                ProfilerHelper.GetProfilerProperty(f, ref profilerProperty);
                 // 解析CSV及原始堆栈数据
                 if (ParsingToCsv.GetParsedCsv(profilerProperty, ref f, ref data, ref funcnameReplace, ref funcPathstack, ref FunctionStackData))
                 {
-                    //#region 处理函数堆栈数据
-                    //CaseFlame cf = new CaseFlame();
-                    //cf.flame = prt.GetChildFun(FunctionStackData, ref funhashMap);
-                    //listFrame.Add(cf);
-                    //ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame); //主线程堆栈统计数据
-                    //#endregion
-                    //funcnameReplace.Clear();
-                    //funcPathstack.Clear();
-                    //#region 处理渲染线程数据
-                    //KProfilerHelper.GetProfilerFrameData(f, renderindex, ref profilerFrame);
-                    //KProfilerHelper.ExtractTimeLineData(profilerFrame, f, renderindex, ref funcnameReplace, ref timedata, ref funcPathstack);
-                    //ren = prt.GetRenFun(timedata, ref funhashMap);
-                    //ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren, ref funhashMap); //渲染线程统计数据
-                    //ren.init();
-                    //#endregion
-                    //#region 释放空间
-                    //FunctionStackData.Clear();
-                    //timedata.Clear();
-                    //prt.stafun.Clear();
-                    //funcnameReplace.Clear();
-                    //funcPathstack.Clear();
-                    //#endregion
+                    #region 处理函数堆栈数据
+                    CaseFlame cf = new CaseFlame();
+                    cf.flame = prt.GetChildFun(FunctionStackData, ref funhashMap);
+                    listFrame.Add(cf);
+                    ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame); //主线程堆栈统计数据
+                    #endregion
+                    funcnameReplace.Clear();
+                    funcPathstack.Clear();
+                    #region 处理渲染线程数据
+                    ProfilerHelper.GetProfilerFrameData(f, renderindex, ref profilerFrame);
+                    ProfilerHelper.ExtractTimeLineData(profilerFrame, f, renderindex, ref funcnameReplace, ref timedata, ref funcPathstack);
+                    ren = prt.GetRenFun(timedata, ref funhashMap);
+                    ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren, ref funhashMap); //渲染线程统计数据
+                    ren.init();
+                    #endregion
+                    #region 释放空间
+                    FunctionStackData.Clear();
+                    timedata.Clear();
+                    prt.stafun.Clear();
+                    funcnameReplace.Clear();
+                    funcPathstack.Clear();
+                    #endregion
                 }
             }
             //保存json文件线程1

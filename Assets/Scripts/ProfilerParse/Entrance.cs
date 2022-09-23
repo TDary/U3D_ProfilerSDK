@@ -53,7 +53,7 @@ internal class Entrance : MonoBehaviour
             string ID = comd.ContainsKey("-ID") ? comd["-ID"] : "0";
             string ServerUrl = comd.ContainsKey("-ServerUrl") ? comd["-ServerUrl"] : "";
             string httprequest = ServerUrl + "taskreport?id=" + ID + "&result=0" + "&index=" + Index;
-            string Response = MHttpSender.SendGet(httprequest);
+            string Response = SHttpSender.SendGet(httprequest);
 
             Debug.Log("解析异常 上报：" + httprequest + "  Response:" + Response);
         }
