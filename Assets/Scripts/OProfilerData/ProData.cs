@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
-using UnityEditor.Profiling;
 using UnityEditorInternal;
 #if UNITY_2019_1_OR_NEWER
 using UnityEditor.Profiling;
@@ -82,16 +81,16 @@ namespace OProfilerData
     }
     public class AreaDatas
     {
-        public List<AreaData> AreaDataList;
+        public List<OAreaData> AreaDataList;
 
         public int size { get; set; }
 
         public AreaDatas()
         {
-            this.AreaDataList = new List<AreaData>();
+            this.AreaDataList = new List<OAreaData>();
         }
 
-        public void Add(AreaData data)
+        public void Add(OAreaData data)
         {
             this.AreaDataList.Add(data);
             this.size += data.size;
@@ -109,7 +108,7 @@ namespace OProfilerData
             this.size = 0;
         }
     }
-    public class AreaData
+    public class OAreaData
     {
         public int frame { get; set; }
 
@@ -117,7 +116,7 @@ namespace OProfilerData
 
         public int size { get; set; }
 
-        public AreaData()
+        public OAreaData()
         {
             this.frame = -1;
         }
