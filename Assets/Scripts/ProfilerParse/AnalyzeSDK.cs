@@ -24,9 +24,7 @@ namespace Analyze
         string FunRenderRowjsonPath;
         string FunHashPath;
         string FunJsonPath;
-        string Index;
         int renderindex;
-        string ServerUrl;
         bool shieldSwitch;
         static AnalyzeSDK()
         {
@@ -49,8 +47,6 @@ namespace Analyze
             FunRowjsonPath = comd.ContainsKey("-funrowjsonPath") ? comd["-funrowjsonPath"] : "/funjson";
             FunRenderRowjsonPath = comd.ContainsKey("-funrenderrowjsonPath") ? comd["-funrenderrowjsonPath"] : "/funjson";
             FunHashPath = comd.ContainsKey("-funhashPath") ? comd["-funhashPath"] : "/funjson";
-            Index = comd.ContainsKey("-Index") ? comd["-Index"] : "";
-            ServerUrl = comd.ContainsKey("-ServerUrl") ? comd["-ServerUrl"] : "";
             shieldSwitch = Convert.ToBoolean(comd.ContainsKey("-shieldSwitch") ? comd["-shieldSwitch"] : "");
 
             if (RawPath == "")
@@ -65,7 +61,6 @@ namespace Analyze
             Debug.Log("FunRowjsonPath:" + FunRowjsonPath);
             Debug.Log("FunRenderRowjsonPath:" + FunRenderRowjsonPath);
             Debug.Log("FunHashPath:" + FunHashPath);
-            Debug.Log("当前实时解析进程ID" + Index);    //记录当前进程为服务器的第几个解析进程
 
             ProfilerDriver.ClearAllFrames();
 

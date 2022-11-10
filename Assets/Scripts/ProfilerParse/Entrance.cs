@@ -49,13 +49,8 @@ internal class Entrance : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError(e.ToString());
-            string Index = comd.ContainsKey("-Index") ? comd["-Index"] : "";
             string ID = comd.ContainsKey("-ID") ? comd["-ID"] : "0";
-            string ServerUrl = comd.ContainsKey("-ServerUrl") ? comd["-ServerUrl"] : "";
-            string httprequest = ServerUrl + "taskreport?id=" + ID + "&result=0" + "&index=" + Index;
-            string Response = SHttpSender.SendGet(httprequest);
-
-            Debug.Log("解析异常 上报：" + httprequest + "  Response:" + Response);
+            Debug.Log("解析异常 上报----");
         }
 
     }
