@@ -54,4 +54,26 @@ internal class Entrance : MonoBehaviour
         }
 
     }
+
+    public static void EntranceGetMemory()
+    {
+        Dictionary<string, string> comd = GetInputCommand(System.Environment.GetCommandLineArgs());
+        string get_ip = string.Empty;
+        string filePath = string.Empty;
+        get_ip = comd.ContainsKey("-IP") ? comd["-IP"] : "";
+        filePath = comd.ContainsKey("-FilePath") ? comd["-FilePath"] : "";
+        try
+        {
+            if (!string.IsNullOrEmpty(get_ip))
+            {
+                GetMemByTools.instance().ExtractMemoryDetailed(get_ip,filePath);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e.ToString());
+            string ID = comd.ContainsKey("-ID") ? comd["-ID"] : "0";
+            Debug.Log("异常 上报----");
+        }
+    }
 }
