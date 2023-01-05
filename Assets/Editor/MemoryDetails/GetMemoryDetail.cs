@@ -7,12 +7,14 @@ using UnityEngine.Profiling;
 using System.IO;
 using System;
 using UnityEditorInternal;
+using System.Threading;
 
 namespace ProfileMemory
 {
   
     public class ExtractMemoryInfo:EditorWindow
     {
+        private string connectIP = string.Empty;
         private static ExtractMemoryInfo Instance;
         [MenuItem("Tool/GetMemoryDetailed")]
         public static void GetMemoryDetails()
@@ -25,22 +27,34 @@ namespace ProfileMemory
         }
         private void OnGUI()
         {
-            string connectIP = string.Empty;
             GUILayout.Label("请输入要连接的IP：");
-            connectIP = GUILayout.TextField(connectIP);
-            if (GUILayout.Button("获取一次内存数据"))
+            connectIP = EditorGUILayout.TextField(connectIP);
+            if (GUILayout.Button("连接游戏"))
             {
                 if (!string.IsNullOrEmpty(connectIP))
                 {
-                    ExtractMemoryDetailed(connectIP);
+                    ConnectGamesAndOpenProfiler(connectIP);
                 }
             }
+            if(GUILayout.Button("执行一次Take Sample"))
+            {
+                TakeSimple();
+            }
+            if (GUILayout.Button("获取一次内存Detail数据"))
+            {
+                ExtractMemoryDetailed();
+            }
         }
-        public static void ExtractMemoryDetailed(string ip)
+
+        public static void ConnectGamesAndOpenProfiler(string ip)
         {
             //打开Profiler窗口
             EditorApplication.ExecuteMenuItem("Window/Analysis/Profiler");
             ProfilerDriver.DirectIPConnect(ip);   //连接机器ip，需开启游戏
+        }
+
+        public static void TakeSimple()
+        {
             var ProfilerWindow = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProfilerWindow");
             var MemoryProfilerModule = typeof(EditorWindow).Assembly.GetType("UnityEditorInternal.Profiling.MemoryProfilerModule");
 #if UNITY_2020_1_OR_NEWER
@@ -58,6 +72,18 @@ namespace ProfileMemory
             //截取一帧，Take Sample Editor
             var RefreshMemoryData = memoryModule.GetType().GetMethod("RefreshMemoryData", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
             RefreshMemoryData.Invoke(memoryModule, new System.Object[] { });
+        }
+        public static void ExtractMemoryDetailed()
+        {
+            var ProfilerWindow = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProfilerWindow");
+            var MemoryProfilerModule = typeof(EditorWindow).Assembly.GetType("UnityEditorInternal.Profiling.MemoryProfilerModule");
+#if UNITY_2020_1_OR_NEWER
+            var ProfilerWindows = ProfilerWindow.GetField("s_ProfilerWindows", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.GetField).GetValue(null) as IList;
+#else
+            var ProfilerWindows = ProfilerWindow.GetField("m_ProfilerWindows", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.GetField).GetValue(null) as IList;
+#endif
+            var GetProfilerModule = ProfilerWindows[0].GetType().GetMethod("GetProfilerModule", BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(MemoryProfilerModule);
+            var memoryModule = GetProfilerModule.Invoke(ProfilerWindows[0], new System.Object[] { ProfilerArea.Memory });
             //内存数据在m_MemoryListView里面
             var m_MemoryListView = MemoryProfilerModule.GetField("m_MemoryListView", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance).GetValue(memoryModule);
             var m_Root = m_MemoryListView.GetType().GetField("m_Root", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.GetField).GetValue(m_MemoryListView);
