@@ -141,7 +141,6 @@ namespace Analyze
             //保存json文件线程1
             Thread thread1 = new Thread(() =>
             {
-                CsvFileHelper.SaveCsvFile(CsvPath, data);
                 SaveFunRowjson(FunRowjsonPath, casefunrow);
                 SaveFunHashJson(FunHashPath, funhashMap);
             });
@@ -152,6 +151,7 @@ namespace Analyze
             {
                 SaveRenderRowjson(FunRenderRowjsonPath, caserenfunrow);
                 SaveFunJson(FunJsonPath, listFrame);
+                CsvFileHelper.SaveCsvFile(CsvPath, data);
             });
             thread2.Start();
 
