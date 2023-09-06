@@ -13,7 +13,7 @@ internal class BasicDataAL
     /// <returns></returns>
     public static BaseData AnalyzeData(ProfilerProperty profilerProperty, int actualFrame)
     {
-        BaseData baseData = ProfilerHelper.ExtractBaseData(profilerProperty, actualFrame);
+        BaseData baseData = ProfilerTool.ExtractBaseData(profilerProperty, actualFrame);
         return baseData;
     }
 }

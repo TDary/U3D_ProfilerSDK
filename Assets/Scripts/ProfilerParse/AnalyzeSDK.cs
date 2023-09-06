@@ -92,7 +92,7 @@ namespace Analyze
                     {
                         continue;
                     }
-                    ProfilerHelper.GetProfilerProperty(f, ref profilerProperty);
+                    ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
                     if (!parcsv.GetSimpleData(profilerProperty, ref f, ref csvdata, ref rangeCount))
                     {
                         Debug.Log("跳过了一帧:" + f);
@@ -130,7 +130,7 @@ namespace Analyze
                             continue;
                         }
 
-                        ProfilerHelper.GetProfilerProperty(f, ref profilerProperty);
+                        ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
                         int count = f;
                         #region 处理函数堆栈数据
                         CaseFlame cf = new CaseFlame();
@@ -141,7 +141,7 @@ namespace Analyze
                         funcnameReplace.Clear();
                         funcPathstack.Clear();
                         #region 处理渲染线程数据
-                        ProfilerHelper.GetProfilerFrameData(f, renderindex, ref profilerFrame);
+                        ProfilerTool.GetProfilerFrameData(f, renderindex, ref profilerFrame);
                         ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, prt.GetRenFunFast(currentRen, profilerFrame, f, renderindex, ref funcnameReplace, ref funcPathstack, ref funhashMap), ref funhashMap); //渲染线程统计数据
                         ren.init();
                         #endregion

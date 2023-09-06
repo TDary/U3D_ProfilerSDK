@@ -17,13 +17,13 @@ internal class RenderingDataAL
     /// <returns></returns>
     public static AreaData AnalyzeData(int dataFrame, int actualFrame)
     {
-        AreaData renderingData = ProfilerHelper.ExtractAreaData(dataFrame, ProfilerArea.Rendering);
+        AreaData renderingData = ProfilerTool.ExtractAreaData(dataFrame, ProfilerArea.Rendering);
         return renderingData;
     }
 #if UNITY_2020_2_OR_NEWER
     public static AreaData AnalyzeData(int dataFrame, int actualFrame, RawFrameDataView rawFrameDataView)
     {
-        AreaData memoryData = ProfilerHelper.ExtractAreaData(dataFrame, ProfilerArea.Rendering, rawFrameDataView);
+        AreaData memoryData = ProfilerTool.ExtractAreaData(dataFrame, ProfilerArea.Rendering, rawFrameDataView);
         return memoryData;
     }
 #endif

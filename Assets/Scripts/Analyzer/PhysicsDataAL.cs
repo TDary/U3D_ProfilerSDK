@@ -15,7 +15,7 @@ internal class PhysicsDataAL
     /// <returns></returns>
     public static AreaData AnalyzeData(int dataFrame, int actualFrame)
     {
-        AreaData physicsData = ProfilerHelper.ExtractAreaData(dataFrame, ProfilerArea.Physics);
+        AreaData physicsData = ProfilerTool.ExtractAreaData(dataFrame, ProfilerArea.Physics);
         return physicsData;
     }
 }

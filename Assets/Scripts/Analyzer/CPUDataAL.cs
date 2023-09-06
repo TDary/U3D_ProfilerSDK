@@ -15,7 +15,7 @@ internal class CPUDataAL
     /// <returns></returns>
     public static AreaData AnalyzeData(int dataFrame, int actualFrame)
     {
-        AreaData cpuData = ProfilerHelper.ExtractAreaData(dataFrame, ProfilerArea.CPU);
+        AreaData cpuData = ProfilerTool.ExtractAreaData(dataFrame, ProfilerArea.CPU);
         return cpuData;
     }
 }

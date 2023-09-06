@@ -16,13 +16,13 @@ public class MemoryDataAL
     /// <returns></returns>
     public static AreaData AnalyzeData(int dataFrame, int actualFrame)
     {
-        AreaData memoryData = ProfilerHelper.ExtractAreaData(dataFrame, ProfilerArea.Memory);
+        AreaData memoryData = ProfilerTool.ExtractAreaData(dataFrame, ProfilerArea.Memory);
         return memoryData;
     }
 #if UNITY_2020_2_OR_NEWER
     public static AreaData AnalyzeData(int dataFrame, int actualFrame, RawFrameDataView rawFrameDataView)
     {
-        AreaData memoryData = ProfilerHelper.ExtractAreaData(dataFrame, ProfilerArea.Memory, rawFrameDataView);
+        AreaData memoryData = ProfilerTool.ExtractAreaData(dataFrame, ProfilerArea.Memory, rawFrameDataView);
         return memoryData;
     }
 #endif

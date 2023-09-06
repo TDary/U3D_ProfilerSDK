@@ -15,7 +15,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Threading;
 #endif
-public class ProfilerHelper
+public class ProfilerTool
 {
     /// <summary>
     /// 提取单帧基本信息。

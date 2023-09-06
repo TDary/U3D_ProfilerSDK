@@ -15,7 +15,7 @@ internal class GPUDataAL
     /// <returns></returns>
     public static AreaData AnalyzeData(int dataFrame, int actualFrame)
     {
-        AreaData gpuData = ProfilerHelper.ExtractAreaData(dataFrame, ProfilerArea.GPU);
+        AreaData gpuData = ProfilerTool.ExtractAreaData(dataFrame, ProfilerArea.GPU);
         return gpuData;
     }
 }
