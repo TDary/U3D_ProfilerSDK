@@ -46,10 +46,10 @@ namespace Analyze
 
             RawPath = comd.ContainsKey("-rawPath") ? comd["-rawPath"] : "";
             CsvPath = comd.ContainsKey("-csvPath") ? comd["-csvPath"] : "/csv";
-            FunPath = comd.ContainsKey("-funjsonPath") ? comd["-funjsonPath"] : "/funjson";
-            FunRowPath = comd.ContainsKey("-funrowjsonPath") ? comd["-funrowjsonPath"] : "/funjson";
-            FunRenderRowPath = comd.ContainsKey("-funrenderrowjsonPath") ? comd["-funrenderrowjsonPath"] : "/funjson";
-            FunHashPath = comd.ContainsKey("-funhashPath") ? comd["-funhashPath"] : "/funjson";
+            FunPath = comd.ContainsKey("-funPath") ? comd["-funPath"] : "/funbin";
+            FunRowPath = comd.ContainsKey("-funrowPath") ? comd["-funrowPath"] : "/funbin";
+            FunRenderRowPath = comd.ContainsKey("-funrenderrowPath") ? comd["-funrenderrowPath"] : "/funbin";
+            FunHashPath = comd.ContainsKey("-funhashPath") ? comd["-funhashPath"] : "/funbin";
             AnalyzeType = comd.ContainsKey("-analyzeType") ? comd["-analyzeType"] : "/csv";
             shieldSwitch = Convert.ToBoolean(comd.ContainsKey("-shieldSwitch") ? comd["-shieldSwitch"] : "");
 
