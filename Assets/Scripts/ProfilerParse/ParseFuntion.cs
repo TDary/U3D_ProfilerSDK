@@ -1,6 +1,8 @@
 ﻿using OProfilerData;
 using System;
 using System.Collections.Generic;
+using UnityEditorInternal;
+using UnityEngine;
 
 public class ParseFuntion
 {
@@ -21,6 +23,51 @@ public class ParseFuntion
 
         private int MaxDeepF = 10;
         //TODO:优化结构，有bug，重复性的函数会产生bug
+
+        public TimeLineFunData GetRenFunFast(TimeLineData now, ProfilerFrameDataIterator profilerFrameDataIterator, int actualFrame, int threadIndex, ref Dictionary<string, string> funcnameReplace, ref List<string> funcPathstack, ref Dictionary<int, string> funhashMap)
+        {
+            string unknowFun = "UnknownFunction";
+            TimeLineFunData subre = new TimeLineFunData();
+            subre.name = 0;
+            subre.beginTime = 0;
+            subre.durTime = 0;
+            subre.children = new List<TimeLineFunData>();
+            stactime.Push(subre);
+            while (profilerFrameDataIterator.Next(true))
+            {
+                now.TimeData(actualFrame, profilerFrameDataIterator, threadIndex, ref funcnameReplace, ref funcPathstack);
+                if (now.functionName == "")
+                {
+                    now.functionName = unknowFun;
+                }
+                if (!funhashMap.ContainsKey(now.functionName.GetHashCode()))
+                {
+                    funhashMap.Add(now.functionName.GetHashCode(), now.functionName);
+                }
+                string[] functionnameArray = now.functionPath.Split('/');
+                if (subre.name == 0)
+                {
+                    subre.name = functionnameArray[0].GetHashCode();
+                    subre.funname = functionnameArray[0];
+                }
+                string parentFunName = functionnameArray[functionnameArray.Length - 2];
+
+                if (parentFunName == "")
+                {
+                    parentFunName = unknowFun;
+                }
+
+                TimeLineFunData su = new TimeLineFunData(now.functionName.GetHashCode(), now.functionName, now.funcStartTime_ms, now.duration_ms);
+                while (parentFunName.GetHashCode() != stactime.Peek().name)
+                {
+                    stactime.Pop();
+                }
+                TimeLineFunData parentData = stactime.Peek();
+                parentData.children.Add(su);
+                stactime.Push(su);
+            }
+            return subre;
+        }
 
         public TimeLineFunData GetRenFun(List<TimeLineData> sourcedata, ref Dictionary<int, string> funhashMap)
         {
@@ -233,6 +280,62 @@ public class ParseFuntion
             return subre;
         }
 
+        public SubData GetChildFunFast(ProfilerProperty profilerProperty, int actualFrame, ref Dictionary<string, string> funcnameReplace, ref Dictionary<int, string> funhashMap,ref List<string> funcPathstack,FunctionData now)
+        {
+            string unknowFun = "UnknownFunction";
+            SubData subda = new SubData();
+            subda.name = 0;
+            subda.children = new List<SubData>();
+            subda.total = 0;
+            subda.self = 0;
+            subda.timems = 0;
+            subda.selfms = 0;
+            subda.calls = 0;
+            subda.gcalloc = 0;
+            stafun.Push(subda);
+            while (profilerProperty.Next(true))
+            {
+                now.FStackData(actualFrame, profilerProperty, ref funcPathstack, ref funcnameReplace);
+                if (now.FunctionName == "")
+                {
+                    now.FunctionName = unknowFun;
+                }
+                if (!funhashMap.ContainsKey(now.FunctionName.GetHashCode()))
+                {
+                    funhashMap.Add(now.FunctionName.GetHashCode(), now.FunctionName);
+                }
+                string[] functionnameArray = now.FunctionPath.Split('/');
+                if (subda.name == 0)
+                {
+                    subda.name = functionnameArray[0].GetHashCode();
+                }
+                string parentFunName = functionnameArray[functionnameArray.Length - 2];
+
+                if (parentFunName == "")
+                {
+                    parentFunName = unknowFun;
+                }
+
+                SubData su = new SubData();
+                su.name = now.FunctionName.GetHashCode();
+                su.children = new List<SubData>();
+                su.total = (int)(now.TotalCPUPercent * 1000.0f);//保留三位小数
+                su.self = (int)(now.SelfCPUPercent * 1000.0f);
+                su.timems = (int)(now.TotalTime_ms * 1000.0f);
+                su.selfms = (int)(now.SelfTime_ms * 1000.0f);
+                su.calls = (int)(now.Calls * 1000.0f);
+                su.gcalloc = (int)(now.GCMemory_KB * 1000.0f);
+                while (parentFunName.GetHashCode() != stafun.Peek().name)
+                {
+                    stafun.Pop();
+                }
+                SubData parentData = stafun.Peek();
+                parentData.children.Add(su);
+                stafun.Push(su);
+            }
+            return subda;
+        }
+
         public SubData GetChildFun(List<FunctionData> sourcedata, ref Dictionary<int, string> funhashMap)
         {
             string unknowFun = "UnknownFunction";
@@ -272,12 +375,12 @@ public class ParseFuntion
                 SubData su = new SubData();
                 su.name = now.FunctionName.GetHashCode();
                 su.children = new List<SubData>();
-                su.total = (int)(now.TotalCPUPercent * 100.0f);
-                su.self = (int)(now.SelfCPUPercent * 100.0f);
-                su.timems = (int)(now.TotalTime_ms * 100.0f);
-                su.selfms = (int)(now.SelfTime_ms * 100.0f);
-                su.calls = (int)(now.Calls * 100.0f);
-                su.gcalloc = (int)(now.GCMemory_KB * 100.0f);
+                su.total = (int)(now.TotalCPUPercent * 1000.0f);//保留三位小数
+                su.self = (int)(now.SelfCPUPercent * 1000.0f);
+                su.timems = (int)(now.TotalTime_ms * 1000.0f);
+                su.selfms = (int)(now.SelfTime_ms * 1000.0f);
+                su.calls = (int)(now.Calls * 1000.0f);
+                su.gcalloc = (int)(now.GCMemory_KB * 1000.0f);
                 while (parentFunName.GetHashCode() != stafun.Peek().name)
                 {
                     stafun.Pop();
@@ -289,64 +392,64 @@ public class ParseFuntion
             return subda;
         }
 
-        public SubData GetChildFunLimite(List<FunctionData> sourcedata, ref Dictionary<int, string> funhashMap)
-        {
-            string unknowFun = "UnknownFunction";
-            SubData subda = new SubData();
-            subda.name = 0;
-            subda.children = new List<SubData>();
-            subda.total = 0;
-            subda.self = 0;
-            subda.timems = 0;
-            subda.selfms = 0;
-            subda.calls = 0;
-            subda.gcalloc = 0;
-            stafun.Push(subda);
-            for (int i = 0; i < sourcedata.Count; i++)
-            {
-                FunctionData now = sourcedata[i];
-                if (now.FunctionName == "")
-                {
-                    now.FunctionName = unknowFun;
-                }
-                if (!funhashMap.ContainsKey(now.FunctionName.GetHashCode()))
-                {
-                    funhashMap.Add(now.FunctionName.GetHashCode(), now.FunctionName);
-                }
-                string[] functionnameArray = now.FunctionPath.Split('/');
-                if (subda.name == 0)
-                {
-                    subda.name = functionnameArray[0].GetHashCode();
-                }
-                string parentFunName = functionnameArray[functionnameArray.Length - 2];
+        //public SubData GetChildFunLimite(List<FunctionData> sourcedata, ref Dictionary<int, string> funhashMap)
+        //{
+        //    string unknowFun = "UnknownFunction";
+        //    SubData subda = new SubData();
+        //    subda.name = 0;
+        //    subda.children = new List<SubData>();
+        //    subda.total = 0;
+        //    subda.self = 0;
+        //    subda.timems = 0;
+        //    subda.selfms = 0;
+        //    subda.calls = 0;
+        //    subda.gcalloc = 0;
+        //    stafun.Push(subda);
+        //    for (int i = 0; i < sourcedata.Count; i++)
+        //    {
+        //        FunctionData now = sourcedata[i];
+        //        if (now.FunctionName == "")
+        //        {
+        //            now.FunctionName = unknowFun;
+        //        }
+        //        if (!funhashMap.ContainsKey(now.FunctionName.GetHashCode()))
+        //        {
+        //            funhashMap.Add(now.FunctionName.GetHashCode(), now.FunctionName);
+        //        }
+        //        string[] functionnameArray = now.FunctionPath.Split('/');
+        //        if (subda.name == 0)
+        //        {
+        //            subda.name = functionnameArray[0].GetHashCode();
+        //        }
+        //        string parentFunName = functionnameArray[functionnameArray.Length - 2];
 
-                if (parentFunName == "")
-                {
-                    parentFunName = unknowFun;
-                }
+        //        if (parentFunName == "")
+        //        {
+        //            parentFunName = unknowFun;
+        //        }
 
-                SubData su = new SubData();
-                su.name = now.FunctionName.GetHashCode();
-                su.children = new List<SubData>();
-                su.total = (int)(now.TotalCPUPercent * 100.0f);
-                su.self = (int)(now.SelfCPUPercent * 100.0f);
-                su.timems = (int)(now.TotalTime_ms * 100.0f);
-                su.selfms = (int)(now.SelfTime_ms * 100.0f);
-                su.calls = (int)(now.Calls * 100.0f);
-                su.gcalloc = (int)(now.GCMemory_KB * 100.0f);
-                while (parentFunName.GetHashCode() != stafun.Peek().name)
-                {
-                    stafun.Pop();
-                }
-                if (stafun.Count <= MaxDeepF)
-                {
-                    SubData parentData = stafun.Peek();
-                    parentData.children.Add(su);
-                }
-                stafun.Push(su);
-            }
-            return subda;
-        }
+        //        SubData su = new SubData();
+        //        su.name = now.FunctionName.GetHashCode();
+        //        su.children = new List<SubData>();
+        //        su.total = (int)(now.TotalCPUPercent * 1000.0f);//保留三位小数
+        //        su.self = (int)(now.SelfCPUPercent * 1000.0f);
+        //        su.timems = (int)(now.TotalTime_ms * 1000.0f);
+        //        su.selfms = (int)(now.SelfTime_ms * 1000.0f);
+        //        su.calls = (int)(now.Calls * 1000.0f);
+        //        su.gcalloc = (int)(now.GCMemory_KB * 1000.0f);
+        //        while (parentFunName.GetHashCode() != stafun.Peek().name)
+        //        {
+        //            stafun.Pop();
+        //        }
+        //        if (stafun.Count <= MaxDeepF)
+        //        {
+        //            SubData parentData = stafun.Peek();
+        //            parentData.children.Add(su);
+        //        }
+        //        stafun.Push(su);
+        //    }
+        //    return subda;
+        //}
 
         public void GetRenderRow(TimeLineFunData subrenda, ref int f, ref Dictionary<int, CaseRenderInfo> renderfunrow, ref Dictionary<int, string> funhash)
         {

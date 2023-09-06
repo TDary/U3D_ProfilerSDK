@@ -1,4 +1,7 @@
-﻿public class CaseRenderInfo
+﻿using System;
+
+[Serializable]
+public class CaseRenderInfo
 {
     public int frame { get; set; }
     public float timems { get; set; }

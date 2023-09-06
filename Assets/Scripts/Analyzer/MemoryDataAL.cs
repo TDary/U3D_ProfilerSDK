@@ -4,7 +4,7 @@ using UnityEditor.Profiling;
 using UnityEngine.Profiling;
 #endif
 
-internal class MemoryDataAL
+public class MemoryDataAL
 {
     /// <summary>
     /// 提取单帧Memory数据。

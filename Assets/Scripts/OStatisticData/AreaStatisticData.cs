@@ -64,7 +64,7 @@ namespace OStatisticData
         public double ShaderParse_ms;
         public double UILogic_ms;
         public double Log_ms;
-        public int WarningCount;
+        //public int WarningCount;
         public int PlayerCount;
         public int NpcCount;
 
@@ -125,7 +125,7 @@ namespace OStatisticData
             this.ShaderParse_ms = DEFAULT_VALUE;
             this.UILogic_ms = DEFAULT_VALUE;
             this.Log_ms = DEFAULT_VALUE;
-            this.WarningCount = DEFAULT_VALUE;
+            //this.WarningCount = DEFAULT_VALUE;
             this.PlayerCount = DEFAULT_VALUE;
             this.NpcCount = DEFAULT_VALUE;
         }
@@ -326,11 +326,11 @@ namespace OStatisticData
                 //this.PlayerCount = 0;
                 //this.NpcCount = 0;
 
-                this.WarningCount = 0;
-                for (int i = 0; i < profilerData.functionData.FunctionStackData.Count; i++)
-                {
-                    this.WarningCount += Convert.ToInt32(profilerData.functionData.FunctionStackData[i].WarningCount);
-                }
+                //this.WarningCount = 0;
+                //for (int i = 0; i < profilerData.functionData.FunctionStackData.Count; i++)
+                //{
+                //    this.WarningCount += Convert.ToInt32(profilerData.functionData.FunctionStackData[i].WarningCount);
+                //}
             }
         }
 
@@ -500,7 +500,7 @@ namespace OStatisticData
                     this.GameObjects, this.GcAlloc_KB, this.Rendering_ms, this.Scripts_ms, this.Physics_ms, this.GarbageCollector_ms,
                     this.VSync_ms, this.Gi_ms, this.Others_ms, this.RenderTransparent_ms, this.RenderOpaque_ms, this.BehaviourUpdate_ms,
                     this.PhysicsCompute_ms, this.PhysicsProcessReports_ms, this.Animator_ms, this.ParticleSystem_ms, this.DynamicBone_ms, this.Overhead_ms,
-                    this.Loading_ms, this.Instantiate_ms, this.ShaderParse_ms, this.UILogic_ms, this.Log_ms, this.WarningCount,
+                    this.Loading_ms, this.Instantiate_ms, this.ShaderParse_ms, this.UILogic_ms, this.Log_ms,
                     this.PlayerCount, this.NpcCount);
         }
     }

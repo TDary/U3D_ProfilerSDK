@@ -168,13 +168,13 @@ namespace OProfilerData
 
         public double TotalTime_ms;
         public double SelfTime_ms;
-        public double DrawCalls;
-        public double TotalGPUTime_ms;
-        public double SelfGPUTime_ms;
-        public double TotalGPUPercent;
-        public double SelfGPUPercent;
-        public double WarningCount;
-        public string ObjectName;
+        //public string DrawCalls;
+        //public string TotalGPUTime_ms;
+        //public string SelfGPUTime_ms;
+        //public string TotalGPUPercent;
+        //public string SelfGPUPercent;
+        //public double WarningCount;
+        //public string ObjectName;
         public int size { get; set; }
         public FunctionData()
         {
@@ -188,36 +188,36 @@ namespace OProfilerData
             this.frame = frame;
 
             this.FunctionPath = profilerProperty.propertyPath.Replace("\n", "");
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2020_1_OR_NEWER
             this.FunctionName = profilerProperty.GetColumn(HierarchyFrameDataView.columnName).Replace("\n", "");
             this.TotalCPUPercent = ToDouble(profilerProperty.GetColumn(HierarchyFrameDataView.columnTotalPercent));
             this.SelfCPUPercent = ToDouble(profilerProperty.GetColumn(HierarchyFrameDataView.columnSelfPercent));
             this.Calls = ToDouble(profilerProperty.GetColumn(HierarchyFrameDataView.columnCalls));
-            this.GCMemory_KB = ToMemory(profilerProperty.GetColumn(HierarchyFrameDataView.columnGcMemory));
+            this.GCMemory_KB = ToDouble(profilerProperty.GetColumn(HierarchyFrameDataView.columnGcMemory));
             this.TotalTime_ms = ToDouble(profilerProperty.GetColumn(HierarchyFrameDataView.columnTotalTime));
             this.SelfTime_ms = ToDouble(profilerProperty.GetColumn(HierarchyFrameDataView.columnSelfTime));
-            this.DrawCalls = ToDouble(profilerProperty.GetColumn(7));
-            this.TotalGPUTime_ms = ToDouble(profilerProperty.GetColumn(8));
-            this.SelfGPUTime_ms = ToDouble(profilerProperty.GetColumn(9));
-            this.TotalGPUPercent = ToDouble(profilerProperty.GetColumn(10));
-            this.SelfGPUPercent = ToDouble(profilerProperty.GetColumn(11));
-            this.WarningCount = ToDouble(profilerProperty.GetColumn(HierarchyFrameDataView.columnWarningCount));
-            this.ObjectName = profilerProperty.GetColumn(HierarchyFrameDataView.columnObjectName);
+            //this.DrawCalls = profilerProperty.GetColumn(7);
+            //this.TotalGPUTime_ms = profilerProperty.GetColumn(8);
+            //this.SelfGPUTime_ms = profilerProperty.GetColumn(9);
+            //this.TotalGPUPercent = profilerProperty.GetColumn(10);
+            //this.SelfGPUPercent = profilerProperty.GetColumn(11);
+            //this.WarningCount = ToDouble(profilerProperty.GetColumn(HierarchyFrameDataView.columnWarningCount));
+            //this.ObjectName = profilerProperty.GetColumn(HierarchyFrameDataView.columnObjectName);
 #else
             this.FunctionName = profilerProperty.GetColumn(ProfilerColumn.FunctionName).Replace("\n", "");
-            this.TotalCPUPercent = ToDouble(profilerProperty.GetColumn(ProfilerColumn.TotalPercent));
-            this.SelfCPUPercent = ToDouble(profilerProperty.GetColumn(ProfilerColumn.SelfPercent));
-            this.Calls = ToDouble(profilerProperty.GetColumn(ProfilerColumn.Calls));
-            this.GCMemory_KB = ToMemory(profilerProperty.GetColumn(ProfilerColumn.GCMemory));
-            this.TotalTime_ms = ToDouble(profilerProperty.GetColumn(ProfilerColumn.TotalTime));
-            this.SelfTime_ms = ToDouble(profilerProperty.GetColumn(ProfilerColumn.SelfTime));
-            this.DrawCalls = ToDouble(profilerProperty.GetColumn(ProfilerColumn.DrawCalls));
-            this.TotalGPUTime_ms = ToDouble(profilerProperty.GetColumn(ProfilerColumn.TotalGPUTime));
-            this.SelfGPUTime_ms = ToDouble(profilerProperty.GetColumn(ProfilerColumn.SelfGPUTime));
-            this.TotalGPUPercent = ToDouble(profilerProperty.GetColumn(ProfilerColumn.TotalGPUPercent));
-            this.SelfGPUPercent = ToDouble(profilerProperty.GetColumn(ProfilerColumn.SelfGPUPercent));
-            this.WarningCount = ToDouble(profilerProperty.GetColumn(ProfilerColumn.WarningCount));
-            this.ObjectName = profilerProperty.GetColumn(ProfilerColumn.ObjectName);
+            this.TotalCPUPercent = (profilerProperty.GetColumn(ProfilerColumn.TotalPercent));
+            this.SelfCPUPercent = (profilerProperty.GetColumn(ProfilerColumn.SelfPercent));
+            this.Calls = (profilerProperty.GetColumn(ProfilerColumn.Calls));
+            this.GCMemory_KB = (profilerProperty.GetColumn(ProfilerColumn.GCMemory));
+            this.TotalTime_ms = (profilerProperty.GetColumn(ProfilerColumn.TotalTime));
+            this.SelfTime_ms = (profilerProperty.GetColumn(ProfilerColumn.SelfTime));
+            //this.DrawCalls = (profilerProperty.GetColumn(ProfilerColumn.DrawCalls));
+            //this.TotalGPUTime_ms = (profilerProperty.GetColumn(ProfilerColumn.TotalGPUTime));
+            //this.SelfGPUTime_ms = (profilerProperty.GetColumn(ProfilerColumn.SelfGPUTime));
+            //this.TotalGPUPercent = (profilerProperty.GetColumn(ProfilerColumn.TotalGPUPercent));
+            //this.SelfGPUPercent = (profilerProperty.GetColumn(ProfilerColumn.SelfGPUPercent));
+            //this.WarningCount = (profilerProperty.GetColumn(ProfilerColumn.WarningCount));
+            //this.ObjectName = profilerProperty.GetColumn(ProfilerColumn.ObjectName);
 #endif
 
             if (this.FunctionName.IndexOf("/") != -1)
@@ -274,19 +274,19 @@ namespace OProfilerData
             sb.Append(separator);
             sb.Append(SelfTime_ms);
             sb.Append(separator);
-            sb.Append(DrawCalls);
-            sb.Append(separator);
-            sb.Append(TotalGPUTime_ms);
-            sb.Append(separator);
-            sb.Append(SelfGPUTime_ms);
-            sb.Append(separator);
-            sb.Append(TotalGPUPercent);
-            sb.Append(separator);
-            sb.Append(SelfGPUPercent);
-            sb.Append(separator);
-            sb.Append(WarningCount);
-            sb.Append(separator);
-            sb.Append(ObjectName);
+            //sb.Append(DrawCalls);
+            //sb.Append(separator);
+            //sb.Append(TotalGPUTime_ms);
+            //sb.Append(separator);
+            //sb.Append(SelfGPUTime_ms);
+            //sb.Append(separator);
+            //sb.Append(TotalGPUPercent);
+            //sb.Append(separator);
+            //sb.Append(SelfGPUPercent);
+            //sb.Append(separator);
+            //sb.Append(WarningCount);
+            //sb.Append(separator);
+            //sb.Append(ObjectName);
 
             return sb.ToString();
         }
