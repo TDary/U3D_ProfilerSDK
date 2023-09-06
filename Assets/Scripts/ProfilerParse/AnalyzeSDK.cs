@@ -193,6 +193,61 @@ namespace Analyze
                 myEvent.WaitOne();
                 //TODO:endProfiler and upload anlayzefile to minio
                 #endregion
+                ProfilerHelper.GetProfilerProperty(f, ref profilerProperty);
+                // 解析CSV及原始堆栈数据
+                if (ParsingToCsv.GetParsedCsv(profilerProperty, ref f, ref data, ref funcnameReplace, ref funcPathstack, ref FunctionStackData))
+                {
+                    #region 处理函数堆栈数据
+                    CaseFlame cf = new CaseFlame();
+                    cf.flame = prt.GetChildFun(FunctionStackData, ref funhashMap);
+                    listFrame.Add(cf);
+                    ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame); //主线程堆栈统计数据
+                    #endregion
+                    funcnameReplace.Clear();
+                    funcPathstack.Clear();
+                    #region 处理渲染线程数据
+                    ProfilerHelper.GetProfilerFrameData(f, renderindex, ref profilerFrame);
+                    ProfilerHelper.ExtractTimeLineData(profilerFrame, f, renderindex, ref funcnameReplace, ref timedata, ref funcPathstack);
+                    ren = prt.GetRenFun(timedata, ref funhashMap);
+                    ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren, ref funhashMap); //渲染线程统计数据
+                    ren.init();
+                    #endregion
+                    #region 释放空间
+                    FunctionStackData.Clear();
+                    timedata.Clear();
+                    prt.stafun.Clear();
+                    funcnameReplace.Clear();
+                    funcPathstack.Clear();
+                    #endregion
+                }
+            }
+            //保存json文件线程1
+            Thread thread1 = new Thread(() =>
+            {
+                SaveFunRowjson(FunRowjsonPath, casefunrow);
+                SaveFunHashJson(FunHashPath, funhashMap);
+            });
+            thread1.Start();
+
+            //保存json文件线程2
+            Thread thread2 = new Thread(() =>
+            {
+                SaveRenderRowjson(FunRenderRowjsonPath, caserenfunrow);
+                SaveFunJson(FunJsonPath, listFrame);
+                CsvFileHelper.SaveCsvFile(CsvPath, data);
+            });
+            thread2.Start();
+
+            while (thread1.ThreadState != ThreadState.Stopped || thread2.ThreadState != ThreadState.Stopped)
+            {
+                if (thread1.ThreadState != ThreadState.Stopped)
+                {
+                    thread1.Join();
+                }
+                else
+                {
+                    thread2.Join();
+                }
             }
             else //deep
             {
