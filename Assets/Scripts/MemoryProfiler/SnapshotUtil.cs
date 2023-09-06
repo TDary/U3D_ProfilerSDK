@@ -187,7 +187,6 @@ public class SnapshotUtil
         {
             Debug.LogException(ex);
             Debug.LogFormat("ConvertMemorySnapshotIntoJson() interrupted.");
-
         }
     }
 

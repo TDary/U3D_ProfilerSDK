@@ -1,13 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using ICSharpCode.SharpZipLib.GZip;
-using LitJson;
 using OProfilerData;
 using UnityEditorInternal;
 using UnityEngine;
@@ -159,37 +153,9 @@ namespace Analyze
                 }
                 #endregion
                 #region SaveData
-                int threadCount = 2;
-                Thread th1 = new Thread(() =>
-                {
-                    try
-                    {
-                        SaveFun(FunPath, listFrame);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError(ex);
-                    }
-                    threadCount--;
-                    if (threadCount == 0)
-                        myEvent.Set();
-                });
-                Thread th2 = new Thread(() =>
-                {
-                    try
-                    {
-                        SaveFunRow(FunRowPath, casefunrow);
-                        SaveRenderRow(FunRenderRowPath, caserenfunrow);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError(ex);
-                    }
-                    threadCount--;
-                    if (threadCount == 0)
-                        myEvent.Set();
-                });
-                myEvent.WaitOne();
+                SaveFun(FunPath, listFrame);
+                SaveFunRow(FunRowPath, casefunrow);
+                SaveRenderRow(FunRenderRowPath, caserenfunrow);
                 //TODO:endProfiler and upload anlayzefile to minio
                 #endregion
             }
@@ -322,15 +288,17 @@ namespace Analyze
                 throw new Exception("在文件路径中查找错误");
             }
 
-            BinaryFormatter formatter = new BinaryFormatter();
-            var stream = new MemoryStream();
-            formatter.Serialize(stream, listFrame);
-            byte[] datas = CompressGZip(stream.ToArray());  //压缩二进制流
-            using (FileStream str = new FileStream(filePath, FileMode.Create))
+            using (MemoryStream stream = new MemoryStream())
             {
-                str.Write(datas, 0, datas.Length);
+                ProtoBuf.Serializer.Serialize(stream, listFrame);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                FileStream str = new FileStream(filePath, FileMode.Create);
+                str.Write(data, 0, data.Length);
+                stream.Close();
+                str.Close();
             }
-            stream.Close();
         }
 
         public void SaveFunRow(string filePath, Dictionary<int, CaseFunRow> casefunrow)
@@ -356,15 +324,17 @@ namespace Analyze
             {
                 throw new Exception("在文件路径中查找错误");
             }
-            BinaryFormatter formatter = new BinaryFormatter();
-            var stream = new MemoryStream();
-            formatter.Serialize(stream, casefunrow);
-            byte[] datas = CompressGZip(stream.ToArray());  //压缩二进制流
-            using (FileStream str = new FileStream(filePath, FileMode.Create))
+            using (MemoryStream stream = new MemoryStream())
             {
-                str.Write(datas, 0, datas.Length);
+                ProtoBuf.Serializer.Serialize(stream, casefunrow);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                FileStream str = new FileStream(filePath, FileMode.Create);
+                str.Write(data, 0, data.Length);
+                stream.Close();
+                str.Close();
             }
-            stream.Close();
         }
 
         public void SaveFunHash(string filePath, Dictionary<int, string> funhashMap)
@@ -390,15 +360,17 @@ namespace Analyze
             {
                 throw new Exception("在文件路径中查找错误");
             }
-            BinaryFormatter formatter = new BinaryFormatter();
-            var stream = new MemoryStream();
-            formatter.Serialize(stream, funhashMap);
-            byte[] datas = CompressGZip(stream.ToArray());  //压缩二进制流
-            using (FileStream str = new FileStream(filePath, FileMode.Create))
+            using (MemoryStream stream = new MemoryStream())
             {
-                str.Write(datas, 0, datas.Length);
+                ProtoBuf.Serializer.Serialize(stream, funhashMap);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                FileStream str = new FileStream(filePath, FileMode.Create);
+                str.Write(data, 0, data.Length);
+                stream.Close();
+                str.Close();
             }
-            stream.Close();
         }
 
         public void SaveRenderRow(string filePath, Dictionary<int, CaseRender> allcasefunrow)
@@ -424,40 +396,42 @@ namespace Analyze
             {
                 throw new Exception("在文件路径中查找错误");
             }
-            BinaryFormatter formatter = new BinaryFormatter();
-            var stream = new MemoryStream();
-            formatter.Serialize(stream, allcasefunrow);
-            byte[] datas = CompressGZip(stream.ToArray());  //压缩二进制流
-            using (FileStream str = new FileStream(filePath, FileMode.Create))
+            using (MemoryStream stream = new MemoryStream())
             {
-                str.Write(datas, 0, datas.Length);
+                ProtoBuf.Serializer.Serialize(stream, allcasefunrow);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                FileStream str = new FileStream(filePath, FileMode.Create);
+                str.Write(data, 0, data.Length);
+                stream.Close();
+                str.Close();
             }
-            stream.Close();
         }
         #endregion
-        #region 压缩和反压缩二进制文件
-        public byte[] CompressGZip(byte[] rawData)
-        {
-            MemoryStream ms = new MemoryStream();
-            GZipOutputStream compressedzipStream = new GZipOutputStream(ms);
-            compressedzipStream.Write(rawData, 0, rawData.Length);
-            compressedzipStream.Close();
-            return ms.ToArray();
-        }
-        public byte[] UnGZip(byte[] byteArray)
-        {
-            GZipInputStream gzi = new GZipInputStream(new MemoryStream(byteArray));
+        //#region 压缩和反压缩二进制文件
+        //public byte[] CompressGZip(byte[] rawData)
+        //{
+        //    MemoryStream ms = new MemoryStream();
+        //    GZipOutputStream compressedzipStream = new GZipOutputStream(ms);
+        //    compressedzipStream.Write(rawData, 0, rawData.Length);
+        //    compressedzipStream.Close();
+        //    return ms.ToArray();
+        //}
+        //public byte[] UnGZip(byte[] byteArray)
+        //{
+        //    GZipInputStream gzi = new GZipInputStream(new MemoryStream(byteArray));
 
-            MemoryStream re = new MemoryStream(50000);
-            int count;
-            byte[] data = new byte[50000];
-            while ((count = gzi.Read(data, 0, data.Length)) != 0)
-            {
-                re.Write(data, 0, count);
-            }
-            byte[] overarr = re.ToArray();
-            return overarr;
-        }
-        #endregion
+        //    MemoryStream re = new MemoryStream(50000);
+        //    int count;
+        //    byte[] data = new byte[50000];
+        //    while ((count = gzi.Read(data, 0, data.Length)) != 0)
+        //    {
+        //        re.Write(data, 0, count);
+        //    }
+        //    byte[] overarr = re.ToArray();
+        //    return overarr;
+        //}
+        //#endregion
     }
 }
