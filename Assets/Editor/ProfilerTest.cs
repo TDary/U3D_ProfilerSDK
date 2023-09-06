@@ -1,7 +1,13 @@
 ﻿using LitJson;
 using OProcessedData;
 using OProfilerData;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
+using ICSharpCode.SharpZipLib.GZip;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Profiling;
@@ -12,7 +18,6 @@ using static ParseFuntion;
 public class ProfilerTest : EditorWindow
 {
     private static ProfilerTest Instance;
-
     int frame = -1;
     void Start()
     {
@@ -53,20 +58,19 @@ public class ProfilerTest : EditorWindow
             Debug.Log("ProfilerDriver.lastFrameIndex: " + ProfilerDriver.lastFrameIndex);
 
             #region 初始化容器
+            ParsingToCsv parcsv = new ParsingToCsv();
             List<List<string>> data = new List<List<string>>();
             Dictionary<int, CaseFunRow> casefunrow = new Dictionary<int, CaseFunRow>();
             Dictionary<int, string> funhashMap = new Dictionary<int, string>();
             Dictionary<int, CaseRender> caserenfunrow = new Dictionary<int, CaseRender>();
-            List<CaseFlame> listFrame = new List<CaseFlame>();
-            #endregion
-
-            #region  原始数据
-            List<FunctionData> FunctionStackData = new List<FunctionData>();
-            List<TimeLineData> timedata = new List<TimeLineData>();
+            int totalcount = lastIndex - firstIndex - 1;
+            int rangeCount = totalcount;
+            List<CaseFlame> listFrame = new List<CaseFlame>(totalcount);
+            FunctionData now = new FunctionData();
+            TimeLineData currentRen = new TimeLineData();
             #endregion
 
             #region 杂项
-            Dictionary<string, int> allfun = new Dictionary<string, int>();
             ProfilerTrees prt = new ProfilerTrees();
             prt.shieldSwitch = shieldSwitch;
             TimeLineFunData ren = new TimeLineFunData();
@@ -77,44 +81,50 @@ public class ProfilerTest : EditorWindow
             ProfilerProperty profilerProperty = new ProfilerProperty();
             ProfilerFrameDataIterator profilerFrame = new ProfilerFrameDataIterator();
             #endregion
-
-            // 去掉首帧和尾帧
-            for (int f = firstIndex; f < lastIndex; f++)
+            //// 去掉首帧和尾帧
+            var currentTime = DateTime.Now;
+            try
             {
-                if (f == firstIndex)
+                for (int f = firstIndex; f < lastIndex; f++)
                 {
-                    continue;
-                }
-
-                ProfilerHelper.GetProfilerProperty(f, ref profilerProperty);
-                // 解析CSV及原始堆栈数据
-                if (ParsingToCsv.GetParsedCsv(profilerProperty, ref f, ref data, ref funcnameReplace, ref funcPathstack, ref FunctionStackData))
-                {
-                    #region 处理函数堆栈数据
-                    CaseFlame cf = new CaseFlame();
-                    cf.flame = prt.GetChildFun(FunctionStackData, ref funhashMap);
-                    listFrame.Add(cf);
-                    ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame); //主线程堆栈统计数据
+                    if (f == firstIndex)
+                    {
+                        continue;
+                    }
+                    //ProfilerHelper.GetProfilerProperty(f, ref profilerProperty);
+                    #region 处理主线程函数堆栈数据
+                    //CaseFlame cf = new CaseFlame();
+                    //cf.frame_id = f;
+                    //cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funhashMap, ref funcPathstack,now);
+                    //listFrame.Add(cf);
+                    //ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame);
                     #endregion
-                    funcnameReplace.Clear();
-                    funcPathstack.Clear();
+                    //funcnameReplace.Clear();
+                    //funcPathstack.Clear();
                     #region 处理渲染线程数据
                     ProfilerHelper.GetProfilerFrameData(f, renderindex, ref profilerFrame);
-                    ProfilerHelper.ExtractTimeLineData(profilerFrame, f, renderindex, ref funcnameReplace, ref timedata, ref funcPathstack);
-                    ren = prt.GetRenFun(timedata, ref funhashMap);
+                    ren = prt.GetRenFunFast(currentRen,profilerFrame,f,renderindex,ref funcnameReplace,ref funcPathstack, ref funhashMap);
                     ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren, ref funhashMap); //渲染线程统计数据
                     ren.init();
                     #endregion
                     #region 释放空间
-                    FunctionStackData.Clear();
-                    timedata.Clear();
                     prt.stafun.Clear();
+                    prt.stactime.Clear();
                     funcnameReplace.Clear();
                     funcPathstack.Clear();
                     #endregion
                 }
             }
-            string jstr = JsonMapper.ToJson(listFrame);
+            catch(Exception ex)
+            {
+                //将trycatch提取出来
+                Debug.LogError(ex);
+            }
+            
+            var currentTime2 = DateTime.Now;
+            var haoshi = currentTime2 - currentTime;
+            Debug.Log("解析数据耗时：" + haoshi.ToString());
+            //string jstr = JsonMapper.ToJson(listFrame);
 
             string filePath = @"D:\000";
 
@@ -123,11 +133,52 @@ public class ProfilerTest : EditorWindow
                 System.IO.Directory.CreateDirectory(filePath);
             }
 
-            string filename = "t.json";
-            using (var sw = new StreamWriter(new FileStream(Path.Combine(filePath, filename), FileMode.Create, FileAccess.Write, FileShare.ReadWrite), new System.Text.UTF8Encoding(false)))
+            string filename = "result1.bin";
+            BinaryFormatter formatter = new BinaryFormatter();
+            var stream = new MemoryStream();
+            formatter.Serialize(stream, caserenfunrow);
+            byte[] origindatas = stream.ToArray();
+            var compressData = CompressGZip(origindatas);
+            using (FileStream str = new FileStream(Path.Combine(filePath, filename), FileMode.Create))
             {
-                sw.Write(jstr);
+                str.Write(compressData, 0, compressData.Length);
             }
+            stream.Close();
         }
+        if (GUILayout.Button("反序列化测试"))
+        {
+            string path = "D:\\000\\result1.bin";
+            BinaryFormatter formatter = new BinaryFormatter();
+            FileStream stream = new FileStream(path, FileMode.Open);
+            byte[] inbytes = new byte[(int)stream.Length];
+            stream.Read(inbytes, 0, (int)stream.Length);
+            MemoryStream mstream = new MemoryStream(UnGZip(inbytes));
+            Dictionary<int,CaseRender> originalData = (Dictionary<int, CaseRender>)formatter.Deserialize(mstream);
+            mstream.Close();
+            stream.Close();
+        }
+    }
+
+    public static byte[] CompressGZip(byte[] rawData)
+    {
+        MemoryStream ms = new MemoryStream();
+        GZipOutputStream compressedzipStream = new GZipOutputStream(ms);
+        compressedzipStream.Write(rawData, 0, rawData.Length);
+        compressedzipStream.Close();
+        return ms.ToArray();
+    }
+    public static byte[] UnGZip(byte[] byteArray)
+    {
+        GZipInputStream gzi = new GZipInputStream(new MemoryStream(byteArray));
+
+        MemoryStream re = new MemoryStream(50000);
+        int count;
+        byte[] data = new byte[50000];
+        while ((count = gzi.Read(data, 0, data.Length)) != 0)
+        {
+            re.Write(data, 0, count);
+        }
+        byte[] overarr = re.ToArray();
+        return overarr;
     }
 }
