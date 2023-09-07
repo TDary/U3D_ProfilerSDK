@@ -55,9 +55,9 @@ namespace Analyze
 
             Debug.Log("RawPath:" + RawPath);
             Debug.Log("CvsPath:" + CsvPath);
-            Debug.Log("FunJsonPath:" + FunPath);
-            Debug.Log("FunRowjsonPath:" + FunRowPath);
-            Debug.Log("FunRenderRowjsonPath:" + FunRenderRowPath);
+            Debug.Log("FunPath:" + FunPath);
+            Debug.Log("FunRowPath:" + FunRowPath);
+            Debug.Log("FunRenderRowPath:" + FunRenderRowPath);
             Debug.Log("FunHashPath:" + FunHashPath);
 
             ProfilerDriver.ClearAllFrames();
@@ -135,7 +135,8 @@ namespace Analyze
                         funcPathstack.Clear();
                         #region 处理渲染线程数据
                         ProfilerTool.GetProfilerFrameData(f, renderindex, ref profilerFrame);
-                        ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, prt.GetRenFunFast(currentRen, profilerFrame, f, renderindex, ref funcnameReplace, ref funcPathstack, ref funhashMap), ref funhashMap); //渲染线程统计数据
+                        ren = prt.GetRenFunFast(currentRen, profilerFrame, f, renderindex, ref funcnameReplace, ref funcPathstack, ref funhashMap);
+                        ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren, ref funhashMap); //渲染线程统计数据
                         ren.init();
                         #endregion
                         #region 释放空间
