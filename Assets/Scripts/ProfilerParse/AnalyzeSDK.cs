@@ -115,7 +115,7 @@ namespace Analyze
                     stringdata.Append(UUID);
                     stringdata.Append("&rawfile=");
                     stringdata.Append(data[data.Length - 1]);
-                    stringdata.Append("&analyzeType=");
+                    stringdata.Append("&anaType=");
                     stringdata.Append(AnalyzeType);
                     stringdata.Append("&state=");
                     stringdata.Append("success");
@@ -139,7 +139,7 @@ namespace Analyze
                     stringdata.Append(UUID);
                     stringdata.Append("&rawfile=");
                     stringdata.Append(data[data.Length - 1]);
-                    stringdata.Append("&analyzeType=");
+                    stringdata.Append("&anaType=");
                     stringdata.Append(AnalyzeType);
                     stringdata.Append("&state=");
                     stringdata.Append("failed");
@@ -216,7 +216,7 @@ namespace Analyze
                     stringdata.Append(UUID);
                     stringdata.Append("&rawfile=");
                     stringdata.Append(data[data.Length - 1]);
-                    stringdata.Append("&analyzeType=");
+                    stringdata.Append("&anaType=");
                     stringdata.Append(AnalyzeType);
                     stringdata.Append("&state=");
                     stringdata.Append("success");
@@ -241,7 +241,7 @@ namespace Analyze
                     stringdata.Append(UUID);
                     stringdata.Append("&rawfile=");
                     stringdata.Append(data[data.Length - 1]);
-                    stringdata.Append("&analyzeType=");
+                    stringdata.Append("&anaType=");
                     stringdata.Append(AnalyzeType);
                     stringdata.Append("&state=");
                     stringdata.Append("failed");
