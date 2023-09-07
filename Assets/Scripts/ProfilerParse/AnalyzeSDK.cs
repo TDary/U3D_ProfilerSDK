@@ -44,7 +44,7 @@ namespace Analyze
             FunRowPath = comd.ContainsKey("-funrowPath") ? comd["-funrowPath"] : "/funbin";
             FunRenderRowPath = comd.ContainsKey("-funrenderrowPath") ? comd["-funrenderrowPath"] : "/funbin";
             FunHashPath = comd.ContainsKey("-funhashPath") ? comd["-funhashPath"] : "/funbin";
-            AnalyzeType = comd.ContainsKey("-analyzeType") ? comd["-analyzeType"] : "/csv";
+            AnalyzeType = comd.ContainsKey("-analyzeType") ? comd["-analyzeType"] : "";
             shieldSwitch = Convert.ToBoolean(comd.ContainsKey("-shieldSwitch") ? comd["-shieldSwitch"] : "");
 
             if (RawPath == "")
@@ -98,7 +98,6 @@ namespace Analyze
             }
             else if (AnalyzeType == "funprofiler")
             {
-                AutoResetEvent myEvent = new AutoResetEvent(false);
                 Dictionary<int, CaseFunRow> casefunrow = new Dictionary<int, CaseFunRow>();
                 Dictionary<int, string> funhashMap = new Dictionary<int, string>();
                 Dictionary<int, CaseRender> caserenfunrow = new Dictionary<int, CaseRender>();
@@ -154,6 +153,7 @@ namespace Analyze
                 #endregion
                 #region SaveData
                 SaveFun(FunPath, listFrame);
+                SaveFunHash(FunHashPath,funhashMap);
                 SaveFunRow(FunRowPath, casefunrow);
                 SaveRenderRow(FunRenderRowPath, caserenfunrow);
                 //TODO:endProfiler and upload anlayzefile to minio
