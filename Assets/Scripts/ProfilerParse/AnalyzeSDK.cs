@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
+using System.Text;
 using OProfilerData;
 using UnityEditorInternal;
 using UnityEngine;
@@ -21,6 +21,8 @@ namespace Analyze
         string FunHashPath;
         string FunPath;
         string AnalyzeType;
+        string ServerUrl;
+        string UUID;
         int renderindex;
         bool shieldSwitch;
         static AnalyzeSDK()
@@ -38,6 +40,7 @@ namespace Analyze
             Debug.Log("AnalyzeSDK Begin----");
             renderindex = 1;
 
+            UUID = comd.ContainsKey("-UUID") ? comd["-UUID"] : "";
             RawPath = comd.ContainsKey("-rawPath") ? comd["-rawPath"] : "";
             CsvPath = comd.ContainsKey("-csvPath") ? comd["-csvPath"] : "/csv";
             FunPath = comd.ContainsKey("-funPath") ? comd["-funPath"] : "/funbin";
@@ -46,6 +49,7 @@ namespace Analyze
             FunHashPath = comd.ContainsKey("-funhashPath") ? comd["-funhashPath"] : "/funbin";
             AnalyzeType = comd.ContainsKey("-analyzeType") ? comd["-analyzeType"] : "";
             shieldSwitch = Convert.ToBoolean(comd.ContainsKey("-shieldSwitch") ? comd["-shieldSwitch"] : "");
+            ServerUrl = comd.ContainsKey("-ServerUrl") ? comd["-ServerUrl"] : "";
 
             if (RawPath == "")
             {
@@ -146,18 +150,55 @@ namespace Analyze
                         funcPathstack.Clear();
                         #endregion
                     }
+                    #region SaveData
+                    SaveFun(FunPath, listFrame);
+                    SaveFunHash(FunHashPath, funhashMap);
+                    SaveFunRow(FunRowPath, casefunrow);
+                    SaveRenderRow(FunRenderRowPath, caserenfunrow);
+                    #region SendMessageForSuccess
+                    Debug.Log(AnalyzeType + "解析完成----");
+                    if (RawPath.Contains('\\'))
+                    {
+                        RawPath.Replace("\\", "/");
+                    }
+                    var data = RawPath.Split('/');
+                    StringBuilder stringdata = new StringBuilder();
+                    stringdata.Append(ServerUrl);
+                    stringdata.Append("/analyzeEnd?uuid=");
+                    stringdata.Append(UUID);
+                    stringdata.Append("&rawfile=");
+                    stringdata.Append(data[data.Length - 1]);
+                    stringdata.Append("&analyzeType=");
+                    stringdata.Append(AnalyzeType);
+                    stringdata.Append("&state=");
+                    stringdata.Append("success");
+                    string Response = SHttpSender.SendGet(stringdata.ToString());
+                    Debug.Log("解析完成消息上报：" + "Response" + Response);
+                    #endregion
+                    #endregion
                 }
                 catch (Exception ex)
                 {
                     Debug.LogError(ex);
+                    Debug.Log(AnalyzeType + "解析失败----");
+                    if (RawPath.Contains('\\'))
+                    {
+                        RawPath.Replace("\\", "/");
+                    }
+                    var data = RawPath.Split('/');
+                    StringBuilder stringdata = new StringBuilder();
+                    stringdata.Append(ServerUrl);
+                    stringdata.Append("/analyzeEnd?uuid=");
+                    stringdata.Append(UUID);
+                    stringdata.Append("&rawfile=");
+                    stringdata.Append(data[data.Length - 1]);
+                    stringdata.Append("&analyzeType=");
+                    stringdata.Append(AnalyzeType);
+                    stringdata.Append("&state=");
+                    stringdata.Append("failed");
+                    string Response = SHttpSender.SendGet(stringdata.ToString());
+                    Debug.Log("解析失败消息上报：" + "Response" + Response);
                 }
-                #endregion
-                #region SaveData
-                SaveFun(FunPath, listFrame);
-                SaveFunHash(FunHashPath,funhashMap);
-                SaveFunRow(FunRowPath, casefunrow);
-                SaveRenderRow(FunRenderRowPath, caserenfunrow);
-                //TODO:endProfiler and upload anlayzefile to minio
                 #endregion
             }
             else //deep
