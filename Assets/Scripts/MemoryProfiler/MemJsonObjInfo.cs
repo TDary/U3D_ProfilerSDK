@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using LitJson;
 using UnityEditor.MemoryProfiler;
 
 class MemObj
@@ -32,23 +31,23 @@ class MemObj
         }
     }
 
-    public static void SaveAsJson(Dictionary<string, MemTypeNameObject> result, string resultPath)
-    {
-        string resultJson = JsonMapper.ToJson(result);
-        using (var sw = new StreamWriter(new FileStream(resultPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite), new System.Text.UTF8Encoding(false)))
-        {
-            sw.Write(resultJson);
-        }
-    }
+    //public static void SaveAsJson(Dictionary<string, MemTypeNameObject> result, string resultPath)
+    //{
+    //    //string resultJson = JsonMapper.ToJson(result);
+    //    using (var sw = new StreamWriter(new FileStream(resultPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite), new System.Text.UTF8Encoding(false)))
+    //    {
+    //        sw.Write(resultJson);
+    //    }
+    //}
 
-    public static void SaveAllMemJson(List<MemInstanceNameObject> instances, string resultPath)
-    {
-        string resultJson = JsonMapper.ToJson(instances);
-        using (var sw = new StreamWriter(new FileStream(resultPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite), new System.Text.UTF8Encoding(false)))
-        {
-            sw.Write(resultJson);
-        }
-    }
+    //public static void SaveAllMemJson(List<MemInstanceNameObject> instances, string resultPath)
+    //{
+    //    //string resultJson = JsonMapper.ToJson(instances);
+    //    using (var sw = new StreamWriter(new FileStream(resultPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite), new System.Text.UTF8Encoding(false)))
+    //    {
+    //        sw.Write(resultJson);
+    //    }
+    //}
 
     public static void InstanceMemToJson(List<MemInstanceNameObject> instances, string eachSaveFullPath)
     {
