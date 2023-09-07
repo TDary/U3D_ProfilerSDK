@@ -84,21 +84,68 @@ namespace Analyze
                 ParsingToCsv parcsv = new ParsingToCsv();
                 ProfilerProperty profilerProperty = new ProfilerProperty();
                 int rangeCount = lastIndex - firstIndex - 1;
-                for (int f = firstIndex; f < lastIndex; f++)
+                try
                 {
-                    if (f == firstIndex)
+                    for (int f = firstIndex; f < lastIndex; f++)
                     {
-                        continue;
+                        if (f == firstIndex)
+                        {
+                            continue;
+                        }
+                        ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
+                        if (!parcsv.GetSimpleData(profilerProperty, ref f, ref csvdata, ref rangeCount))
+                        {
+                            Debug.Log("跳过了一帧:" + f);
+                        }
                     }
-                    ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
-                    if (!parcsv.GetSimpleData(profilerProperty, ref f, ref csvdata, ref rangeCount))
+                    #region SaveCsvData
+                    CsvFileHelper.SaveCsvFile(CsvPath, csvdata);
+                    #endregion
+                    #region SendEndData
+                    Debug.Log(AnalyzeType + "解析完成----");
+                    if (RawPath.Contains('\\'))
                     {
-                        Debug.Log("跳过了一帧:" + f);
+                        RawPath.Replace("\\", "/");
                     }
+                    var data = RawPath.Split('/');
+                    StringBuilder stringdata = new StringBuilder();
+                    stringdata.Append("http://");
+                    stringdata.Append(ServerUrl);
+                    stringdata.Append("/stop?uuid=");
+                    stringdata.Append(UUID);
+                    stringdata.Append("&rawfile=");
+                    stringdata.Append(data[data.Length - 1]);
+                    stringdata.Append("&analyzeType=");
+                    stringdata.Append(AnalyzeType);
+                    stringdata.Append("&state=");
+                    stringdata.Append("success");
+                    string Response = SHttpSender.SendGet(stringdata.ToString());
+                    Debug.Log("解析完成消息上报：" + "Response" + Response);
+                    #endregion
                 }
-                #region SaveCsvData
-                CsvFileHelper.SaveCsvFile(CsvPath, csvdata);
-                #endregion
+                catch (Exception ex)
+                {
+                    Debug.LogError(ex);
+                    Debug.Log(AnalyzeType + "解析失败----");
+                    if (RawPath.Contains('\\'))
+                    {
+                        RawPath.Replace("\\", "/");
+                    }
+                    var data = RawPath.Split('/');
+                    StringBuilder stringdata = new StringBuilder();
+                    stringdata.Append("http://");
+                    stringdata.Append(ServerUrl);
+                    stringdata.Append("/stop?uuid=");
+                    stringdata.Append(UUID);
+                    stringdata.Append("&rawfile=");
+                    stringdata.Append(data[data.Length - 1]);
+                    stringdata.Append("&analyzeType=");
+                    stringdata.Append(AnalyzeType);
+                    stringdata.Append("&state=");
+                    stringdata.Append("failed");
+                    string Response = SHttpSender.SendGet(stringdata.ToString());
+                    Debug.Log("解析失败消息上报：" + "Response" + Response);
+                }
             }
             else if (AnalyzeType == "funprofiler")
             {
@@ -163,8 +210,9 @@ namespace Analyze
                     }
                     var data = RawPath.Split('/');
                     StringBuilder stringdata = new StringBuilder();
+                    stringdata.Append("http://");
                     stringdata.Append(ServerUrl);
-                    stringdata.Append("/analyzeEnd?uuid=");
+                    stringdata.Append("/stop?uuid=");
                     stringdata.Append(UUID);
                     stringdata.Append("&rawfile=");
                     stringdata.Append(data[data.Length - 1]);
@@ -187,8 +235,9 @@ namespace Analyze
                     }
                     var data = RawPath.Split('/');
                     StringBuilder stringdata = new StringBuilder();
+                    stringdata.Append("http://");
                     stringdata.Append(ServerUrl);
-                    stringdata.Append("/analyzeEnd?uuid=");
+                    stringdata.Append("/stop?uuid=");
                     stringdata.Append(UUID);
                     stringdata.Append("&rawfile=");
                     stringdata.Append(data[data.Length - 1]);
