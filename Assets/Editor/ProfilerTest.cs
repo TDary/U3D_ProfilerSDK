@@ -1,13 +1,8 @@
-﻿using LitJson;
-using OProcessedData;
+﻿using OProcessedData;
 using OProfilerData;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading;
-using ICSharpCode.SharpZipLib.GZip;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Profiling;
@@ -91,25 +86,25 @@ public class ProfilerTest : EditorWindow
                     {
                         continue;
                     }
-                    //ProfilerHelper.GetProfilerProperty(f, ref profilerProperty);
-                    #region 处理主线程函数堆栈数据
+                    //ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
+                    //#region 处理主线程函数堆栈数据
                     //CaseFlame cf = new CaseFlame();
                     //cf.frame_id = f;
-                    //cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funhashMap, ref funcPathstack,now);
+                    //cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funhashMap, ref funcPathstack, now);
                     //listFrame.Add(cf);
                     //ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame);
-                    #endregion
+                    //#endregion
                     //funcnameReplace.Clear();
                     //funcPathstack.Clear();
                     #region 处理渲染线程数据
-                    ProfilerHelper.GetProfilerFrameData(f, renderindex, ref profilerFrame);
-                    ren = prt.GetRenFunFast(currentRen,profilerFrame,f,renderindex,ref funcnameReplace,ref funcPathstack, ref funhashMap);
+                    ProfilerTool.GetProfilerFrameData(f, renderindex, ref profilerFrame);
+                    ren = prt.GetRenFunFast(currentRen, profilerFrame, f, renderindex, ref funcnameReplace, ref funcPathstack, ref funhashMap);
                     ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren, ref funhashMap); //渲染线程统计数据
                     ren.init();
                     #endregion
                     #region 释放空间
                     prt.stafun.Clear();
-                    prt.stactime.Clear();
+                    //prt.stactime.Clear();
                     funcnameReplace.Clear();
                     funcPathstack.Clear();
                     #endregion
@@ -120,65 +115,76 @@ public class ProfilerTest : EditorWindow
                 //将trycatch提取出来
                 Debug.LogError(ex);
             }
-            
-            var currentTime2 = DateTime.Now;
-            var haoshi = currentTime2 - currentTime;
-            Debug.Log("解析数据耗时：" + haoshi.ToString());
-            //string jstr = JsonMapper.ToJson(listFrame);
-
             string filePath = @"D:\000";
 
             if (!Directory.Exists(filePath))
             {
                 System.IO.Directory.CreateDirectory(filePath);
             }
-
-            string filename = "result1.bin";
-            BinaryFormatter formatter = new BinaryFormatter();
-            var stream = new MemoryStream();
-            formatter.Serialize(stream, caserenfunrow);
-            byte[] origindatas = stream.ToArray();
-            var compressData = CompressGZip(origindatas);
+            string filename = "result.bin";
+            var compressData = SerializerObj(caserenfunrow);
             using (FileStream str = new FileStream(Path.Combine(filePath, filename), FileMode.Create))
             {
                 str.Write(compressData, 0, compressData.Length);
             }
-            stream.Close();
         }
         if (GUILayout.Button("反序列化测试"))
         {
-            string path = "D:\\000\\result1.bin";
-            BinaryFormatter formatter = new BinaryFormatter();
+            string path = "D:\\000\\result2.bin";
             FileStream stream = new FileStream(path, FileMode.Open);
-            byte[] inbytes = new byte[(int)stream.Length];
-            stream.Read(inbytes, 0, (int)stream.Length);
-            MemoryStream mstream = new MemoryStream(UnGZip(inbytes));
-            Dictionary<int,CaseRender> originalData = (Dictionary<int, CaseRender>)formatter.Deserialize(mstream);
-            mstream.Close();
+            List<CaseFlame> originalData = ProtoBuf.Serializer.Deserialize<List<CaseFlame>>(stream);
+            
             stream.Close();
         }
-    }
-
-    public static byte[] CompressGZip(byte[] rawData)
-    {
-        MemoryStream ms = new MemoryStream();
-        GZipOutputStream compressedzipStream = new GZipOutputStream(ms);
-        compressedzipStream.Write(rawData, 0, rawData.Length);
-        compressedzipStream.Close();
-        return ms.ToArray();
-    }
-    public static byte[] UnGZip(byte[] byteArray)
-    {
-        GZipInputStream gzi = new GZipInputStream(new MemoryStream(byteArray));
-
-        MemoryStream re = new MemoryStream(50000);
-        int count;
-        byte[] data = new byte[50000];
-        while ((count = gzi.Read(data, 0, data.Length)) != 0)
+        if (GUILayout.Button("测试新接口"))
         {
-            re.Write(data, 0, count);
+            RawFrameDataView rawFrameDataView = ProfilerDriver.GetRawFrameDataView(2, 1);
+            if (rawFrameDataView != null && rawFrameDataView.valid)
+            {
+                Debug.Log(rawFrameDataView.frameStartTimeMs);
+                Debug.Log(rawFrameDataView.frameFps);
+                Debug.Log(rawFrameDataView.threadName);
+            }
         }
-        byte[] overarr = re.ToArray();
-        return overarr;
+    }
+
+    public byte[] SerializerObj(List<CaseFlame> info)
+    {
+        try
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                ProtoBuf.Serializer.Serialize(stream, info);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                return data;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+            return null;
+        }
+    }
+
+    public byte[] SerializerObj(Dictionary<int,CaseRender> info)
+    {
+        try
+        {
+            using(MemoryStream stream = new MemoryStream())
+            {
+                ProtoBuf.Serializer.Serialize(stream, info);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                return data;
+            }
+        }
+        catch(Exception e)
+        {
+            Debug.LogError(e);
+            return null;
+        }
     }
 }
