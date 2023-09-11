@@ -150,8 +150,7 @@ namespace Analyze
             else if (AnalyzeType == "funprofiler")
             {
                 Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>();
-                Dictionary<int, string> funhashMap = new Dictionary<int, string>();
-                Dictionary<int, CaseRender> caserenfunrow = new Dictionary<int, CaseRender>();
+                Dictionary<string, CaseRender> caserenfunrow = new Dictionary<string, CaseRender>();
                 int totalCount = lastIndex - firstIndex - 1;
                 FunctionData now = new FunctionData();
                 TimeLineData currentRen = new TimeLineData();
@@ -178,7 +177,7 @@ namespace Analyze
                         int count = f;
                         #region 处理函数堆栈数据
                         CaseFlame cf = new CaseFlame();
-                        cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funhashMap, ref funcPathstack, now);
+                        cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funcPathstack, now);
                         listFrame.Add(cf);
                         ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame); //主线程堆栈统计数据
                         #endregion
@@ -186,8 +185,8 @@ namespace Analyze
                         funcPathstack.Clear();
                         #region 处理渲染线程数据
                         ProfilerTool.GetProfilerFrameData(f, renderindex, ref profilerFrame);
-                        ren = prt.GetRenFunFast(currentRen, profilerFrame, f, renderindex, ref funcnameReplace, ref funcPathstack, ref funhashMap);
-                        ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren, ref funhashMap); //渲染线程统计数据
+                        ren = prt.GetRenFunFast(currentRen, profilerFrame, f, renderindex, ref funcnameReplace, ref funcPathstack);
+                        ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren); //渲染线程统计数据
                         ren.init();
                         #endregion
                         #region 释放空间
@@ -199,7 +198,6 @@ namespace Analyze
                     }
                     #region SaveData
                     SaveFun(FunPath, listFrame);
-                    SaveFunHash(FunHashPath, funhashMap);
                     SaveFunRow(FunRowPath, casefunrow);
                     SaveRenderRow(FunRenderRowPath, caserenfunrow);
                     #region SendMessageForSuccess
@@ -428,43 +426,7 @@ namespace Analyze
             }
         }
 
-        public void SaveFunHash(string filePath, Dictionary<int, string> funhashMap)
-        {
-            if (filePath.Contains("\\"))
-            {
-                string newPath = filePath.Remove(filePath.LastIndexOf('\\'));
-                if (!Directory.Exists(newPath))
-                {
-                    System.IO.Directory.CreateDirectory(newPath);
-                }
-            }
-            //兼容Linux环境的路径
-            else if (filePath.Contains("/"))
-            {
-                string newPath = filePath.Remove(filePath.LastIndexOf('/'));
-                if (!Directory.Exists(newPath))
-                {
-                    System.IO.Directory.CreateDirectory(newPath);
-                }
-            }
-            else
-            {
-                throw new Exception("在文件路径中查找错误");
-            }
-            using (MemoryStream stream = new MemoryStream())
-            {
-                ProtoBuf.Serializer.Serialize(stream, funhashMap);
-                byte[] data = new byte[stream.Length];
-                stream.Position = 0;
-                stream.Read(data, 0, data.Length);
-                FileStream str = new FileStream(filePath, FileMode.Create);
-                str.Write(data, 0, data.Length);
-                stream.Close();
-                str.Close();
-            }
-        }
-
-        public void SaveRenderRow(string filePath, Dictionary<int, CaseRender> allcasefunrow)
+        public void SaveRenderRow(string filePath, Dictionary<string, CaseRender> allcasefunrow)
         {
             if (filePath.Contains("\\"))
             {

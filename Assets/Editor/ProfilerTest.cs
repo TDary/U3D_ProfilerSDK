@@ -92,7 +92,7 @@ public class ProfilerTest : EditorWindow
                     #region 处理主线程函数堆栈数据
                     CaseFlame cf = new CaseFlame();
                     cf.frame_id = f;
-                    cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funhashMap, ref funcPathstack, now);
+                    cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funcPathstack, now);
                     listFrame.Add(cf);
                     ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame);
                     #endregion

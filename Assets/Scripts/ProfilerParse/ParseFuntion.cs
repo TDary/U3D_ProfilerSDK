@@ -24,11 +24,11 @@ public class ParseFuntion
         private int MaxDeepF = 10;
         //TODO:优化结构，有bug，重复性的函数会产生bug
 
-        public TimeLineFunData GetRenFunFast(TimeLineData now, ProfilerFrameDataIterator profilerFrameDataIterator, int actualFrame, int threadIndex, ref Dictionary<string, string> funcnameReplace, ref List<string> funcPathstack, ref Dictionary<int, string> funhashMap)
+        public TimeLineFunData GetRenFunFast(TimeLineData now, ProfilerFrameDataIterator profilerFrameDataIterator, int actualFrame, int threadIndex, ref Dictionary<string, string> funcnameReplace, ref List<string> funcPathstack)
         {
             string unknowFun = "UnknownFunction";
             TimeLineFunData subre = new TimeLineFunData();
-            subre.name = 0;
+            subre.name = "";
             subre.beginTime = 0;
             subre.durTime = 0;
             subre.children = new List<TimeLineFunData>();
@@ -40,14 +40,10 @@ public class ParseFuntion
                 {
                     now.functionName = unknowFun;
                 }
-                if (!funhashMap.ContainsKey(now.functionName.GetHashCode()))
-                {
-                    funhashMap.Add(now.functionName.GetHashCode(), now.functionName);
-                }
                 string[] functionnameArray = now.functionPath.Split('/');
-                if (subre.name == 0)
+                if (subre.name == "")
                 {
-                    subre.name = functionnameArray[0].GetHashCode();
+                    subre.name = functionnameArray[0];
                     subre.funname = functionnameArray[0];
                 }
                 string parentFunName = functionnameArray[functionnameArray.Length - 2];
@@ -57,8 +53,8 @@ public class ParseFuntion
                     parentFunName = unknowFun;
                 }
 
-                TimeLineFunData su = new TimeLineFunData(now.functionName.GetHashCode(), now.functionName, now.funcStartTime_ms, now.duration_ms);
-                while (parentFunName.GetHashCode() != stactime.Peek().name)
+                TimeLineFunData su = new TimeLineFunData(now.functionName, now.functionName, now.funcStartTime_ms, now.duration_ms);
+                while (parentFunName != stactime.Peek().name)
                 {
                     stactime.Pop();
                 }
@@ -280,7 +276,7 @@ public class ParseFuntion
         //    return subre;
         //}
 
-        public SubData GetChildFunFast(ProfilerProperty profilerProperty, int actualFrame, ref Dictionary<string, string> funcnameReplace, ref Dictionary<int, string> funhashMap,ref List<string> funcPathstack,FunctionData now)
+        public SubData GetChildFunFast(ProfilerProperty profilerProperty, int actualFrame, ref Dictionary<string, string> funcnameReplace,ref List<string> funcPathstack,FunctionData now)
         {
             string unknowFun = "UnknownFunction";
             SubData subda = new SubData();
@@ -299,10 +295,6 @@ public class ParseFuntion
                 if (now.FunctionName == "")
                 {
                     now.FunctionName = unknowFun;
-                }
-                if (!funhashMap.ContainsKey(now.FunctionName.GetHashCode()))
-                {
-                    funhashMap.Add(now.FunctionName.GetHashCode(), now.FunctionName);
                 }
                 string[] functionnameArray = now.FunctionPath.Split('/');
                 if (subda.name == "")
@@ -451,12 +443,8 @@ public class ParseFuntion
         //    return subda;
         //}
 
-        public void GetRenderRow(TimeLineFunData subrenda, ref int f, ref Dictionary<int, CaseRenderInfo> renderfunrow, ref Dictionary<int, string> funhash)
+        public void GetRenderRow(TimeLineFunData subrenda, ref int f, ref Dictionary<string, CaseRenderInfo> renderfunrow)
         {
-            if (!funhash.ContainsKey(subrenda.name))
-            {
-                funhash.Add(subrenda.name, subrenda.funname);
-            }
             CaseRenderInfo renderinfo = new CaseRenderInfo();
             renderinfo.frame = f + 1;
             renderinfo.timems = (float)subrenda.durTime;
@@ -474,11 +462,7 @@ public class ParseFuntion
                 float child_times = 0;
                 foreach (var item in subrenda.children)
                 {
-                    if (!funhash.ContainsKey(item.name))
-                    {
-                        funhash.Add(item.name, item.funname);
-                    }
-                    GetRenderRow(item, ref f, ref renderfunrow, ref funhash);
+                    GetRenderRow(item, ref f, ref renderfunrow);
                     child_times += renderinfo.timems;
                 }
                 renderinfo.selfms = renderinfo.timems - child_times;

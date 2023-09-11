@@ -20,16 +20,16 @@ public class ParseFun
         }
     }
 
-    public static void GetParsedTimelineRowjson(int f, ref Dictionary<int, CaseRender> allcasefunrow, ProfilerTrees prt, TimeLineFunData surenda, ref Dictionary<int, string> funhash)
+    public static void GetParsedTimelineRowjson(int f, ref Dictionary<string, CaseRender> allcasefunrow, ProfilerTrees prt, TimeLineFunData surenda)
     {
-        Dictionary<int, CaseRenderInfo> framefunrow = new Dictionary<int, CaseRenderInfo>();
-        prt.GetRenderRow(surenda, ref f, ref framefunrow, ref funhash);
+        Dictionary<string, CaseRenderInfo> framefunrow = new Dictionary<string, CaseRenderInfo>();
+        prt.GetRenderRow(surenda, ref f, ref framefunrow);
         foreach (var key in framefunrow.Keys)
         {
             if (!allcasefunrow.ContainsKey(key))
             {
                 CaseRender casf = new CaseRender();
-                casf._id = key;
+                casf.name = key;
                 casf.frames = new List<CaseRenderInfo>();
                 allcasefunrow.Add(key, casf);
             }
