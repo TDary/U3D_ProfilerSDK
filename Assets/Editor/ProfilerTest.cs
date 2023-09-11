@@ -146,13 +146,15 @@ public class ProfilerTest : EditorWindow
         }
         if (GUILayout.Button("测试新接口"))
         {
-            RawFrameDataView rawFrameDataView = ProfilerDriver.GetRawFrameDataView(2, 1);
-            if (rawFrameDataView != null && rawFrameDataView.valid)
+            ProfilerFrameDataIterator profilerFrameDataIterator = new ProfilerFrameDataIterator();
+            profilerFrameDataIterator.SetRoot(1, 1);
+            while (profilerFrameDataIterator.Next(true))
             {
-                Debug.Log(rawFrameDataView.frameStartTimeMs);
-                Debug.Log(rawFrameDataView.frameFps);
-                Debug.Log(rawFrameDataView.threadName);
+                string threadname = profilerFrameDataIterator.name;
+                profilerFrameDataIterator.GetFrameStartS(1);
+                //Debug.Log("FunName:" + pro.GetColumn(HierarchyFrameDataView.columnName).Replace("\n", ""));
             }
+            profilerFrameDataIterator.Dispose();
         }
         if (GUILayout.Button("转换hash值测试"))
         {
