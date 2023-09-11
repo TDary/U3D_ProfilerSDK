@@ -18,7 +18,6 @@ namespace Analyze
         string CsvPath;
         string FunRowPath;
         string FunRenderRowPath;
-        string FunHashPath;
         string FunPath;
         string AnalyzeType;
         string ServerUrl;
@@ -46,7 +45,6 @@ namespace Analyze
             FunPath = comd.ContainsKey("-funPath") ? comd["-funPath"] : "/funbin";
             FunRowPath = comd.ContainsKey("-funrowPath") ? comd["-funrowPath"] : "/funbin";
             FunRenderRowPath = comd.ContainsKey("-funrenderrowPath") ? comd["-funrenderrowPath"] : "/funbin";
-            FunHashPath = comd.ContainsKey("-funhashPath") ? comd["-funhashPath"] : "/funbin";
             AnalyzeType = comd.ContainsKey("-analyzeType") ? comd["-analyzeType"] : "";
             shieldSwitch = Convert.ToBoolean(comd.ContainsKey("-shieldSwitch") ? comd["-shieldSwitch"] : "");
             ServerUrl = comd.ContainsKey("-ServerUrl") ? comd["-ServerUrl"] : "";
@@ -62,7 +60,6 @@ namespace Analyze
             Debug.Log("FunPath:" + FunPath);
             Debug.Log("FunRowPath:" + FunRowPath);
             Debug.Log("FunRenderRowPath:" + FunRenderRowPath);
-            Debug.Log("FunHashPath:" + FunHashPath);
 
             ProfilerDriver.ClearAllFrames();
 
