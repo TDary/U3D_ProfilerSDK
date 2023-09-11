@@ -149,7 +149,7 @@ namespace Analyze
             }
             else if (AnalyzeType == "funprofiler")
             {
-                Dictionary<int, CaseFunRow> casefunrow = new Dictionary<int, CaseFunRow>();
+                Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>();
                 Dictionary<int, string> funhashMap = new Dictionary<int, string>();
                 Dictionary<int, CaseRender> caserenfunrow = new Dictionary<int, CaseRender>();
                 int totalCount = lastIndex - firstIndex - 1;
@@ -392,7 +392,7 @@ namespace Analyze
             }
         }
 
-        public void SaveFunRow(string filePath, Dictionary<int, CaseFunRow> casefunrow)
+        public void SaveFunRow(string filePath, Dictionary<string, CaseFunRow> casefunrow)
         {
             if (filePath.Contains("\\"))
             {

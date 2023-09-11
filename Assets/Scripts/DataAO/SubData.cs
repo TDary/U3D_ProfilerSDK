@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class SubData
 {
     [ProtoBuf.ProtoMember(1)]
-    public int name { get; set; }
+    public string name { get; set; }
     //值数组
     //*100
     [ProtoBuf.ProtoMember(2)]
