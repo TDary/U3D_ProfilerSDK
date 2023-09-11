@@ -19,6 +19,7 @@ namespace Analyze
         string FunRowPath;
         string FunRenderRowPath;
         string FunPath;
+        string RenFunPath;
         string AnalyzeType;
         string ServerUrl;
         string UUID;
@@ -44,6 +45,7 @@ namespace Analyze
             CsvPath = comd.ContainsKey("-csvPath") ? comd["-csvPath"] : "/csv";
             FunPath = comd.ContainsKey("-funPath") ? comd["-funPath"] : "/funbin";
             FunRowPath = comd.ContainsKey("-funrowPath") ? comd["-funrowPath"] : "/funbin";
+            RenFunPath = comd.ContainsKey("-renfunPath") ? comd["-renfunPath"] : "/funbin";
             FunRenderRowPath = comd.ContainsKey("-funrenderrowPath") ? comd["-funrenderrowPath"] : "/funbin";
             AnalyzeType = comd.ContainsKey("-analyzeType") ? comd["-analyzeType"] : "";
             shieldSwitch = Convert.ToBoolean(comd.ContainsKey("-shieldSwitch") ? comd["-shieldSwitch"] : "");
@@ -59,6 +61,7 @@ namespace Analyze
             Debug.Log("CvsPath:" + CsvPath);
             Debug.Log("FunPath:" + FunPath);
             Debug.Log("FunRowPath:" + FunRowPath);
+            Debug.Log("RenFunPath:" + RenFunPath);
             Debug.Log("FunRenderRowPath:" + FunRenderRowPath);
 
             ProfilerDriver.ClearAllFrames();
@@ -146,18 +149,17 @@ namespace Analyze
             }
             else if (AnalyzeType == "funprofiler")
             {
-                Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>();
-                Dictionary<string, CaseRender> caserenfunrow = new Dictionary<string, CaseRender>();
+                Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>(5000);
+                Dictionary<string, CaseRender> caserenfunrow = new Dictionary<string, CaseRender>(500);
                 int totalCount = lastIndex - firstIndex - 1;
                 FunctionData now = new FunctionData();
                 TimeLineData currentRen = new TimeLineData();
                 List<CaseFlame> listFrame = new List<CaseFlame>(totalCount);
-                List<TimeLineData> timedata = new List<TimeLineData>();
+                List<TimeLineFunData> listRen = new List<TimeLineFunData>();
                 ProfilerTrees prt = new ProfilerTrees();
                 prt.shieldSwitch = shieldSwitch;
-                TimeLineFunData ren = new TimeLineFunData();
-                Dictionary<string, string> funcnameReplace = new Dictionary<string, string>();
-                List<string> funcPathstack = new List<string>();
+                Dictionary<string, string> funcnameReplace = new Dictionary<string, string>(50);
+                List<string> funcPathstack = new List<string>(50);
                 ProfilerProperty profilerProperty = new ProfilerProperty();
                 ProfilerFrameDataIterator profilerFrame = new ProfilerFrameDataIterator();
                 #region 处理大类
@@ -182,12 +184,12 @@ namespace Analyze
                         funcPathstack.Clear();
                         #region 处理渲染线程数据
                         ProfilerTool.GetProfilerFrameData(f, renderindex, ref profilerFrame);
+                        TimeLineFunData ren = new TimeLineFunData();
                         ren = prt.GetRenFunFast(currentRen, profilerFrame, f, renderindex, ref funcnameReplace, ref funcPathstack);
+                        listRen.Add(ren);
                         ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren); //渲染线程统计数据
-                        ren.init();
                         #endregion
                         #region 释放空间
-                        timedata.Clear();
                         prt.stafun.Clear();
                         funcnameReplace.Clear();
                         funcPathstack.Clear();
@@ -197,6 +199,7 @@ namespace Analyze
                     SaveFun(FunPath, listFrame);
                     SaveFunRow(FunRowPath, casefunrow);
                     SaveRenderRow(FunRenderRowPath, caserenfunrow);
+                    SaveRenderFun(RenFunPath, listRen);
                     #region SendMessageForSuccess
                     Debug.Log(AnalyzeType + "解析完成----");
                     if (RawPath.Contains('\\'))
@@ -413,6 +416,42 @@ namespace Analyze
             using (MemoryStream stream = new MemoryStream())
             {
                 ProtoBuf.Serializer.Serialize(stream, casefunrow);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                FileStream str = new FileStream(filePath, FileMode.Create);
+                str.Write(data, 0, data.Length);
+                stream.Close();
+                str.Close();
+            }
+        }
+
+        public void SaveRenderFun(string filePath, List<TimeLineFunData> allrenderFun)
+        {
+            if (filePath.Contains("\\"))
+            {
+                string newPath = filePath.Remove(filePath.LastIndexOf('\\'));
+                if (!Directory.Exists(newPath))
+                {
+                    System.IO.Directory.CreateDirectory(newPath);
+                }
+            }
+            //兼容Linux环境的路径
+            else if (filePath.Contains("/"))
+            {
+                string newPath = filePath.Remove(filePath.LastIndexOf('/'));
+                if (!Directory.Exists(newPath))
+                {
+                    System.IO.Directory.CreateDirectory(newPath);
+                }
+            }
+            else
+            {
+                throw new Exception("在文件路径中查找错误");
+            }
+            using (MemoryStream stream = new MemoryStream())
+            {
+                ProtoBuf.Serializer.Serialize(stream, allrenderFun);
                 byte[] data = new byte[stream.Length];
                 stream.Position = 0;
                 stream.Read(data, 0, data.Length);

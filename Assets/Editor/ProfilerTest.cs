@@ -57,12 +57,12 @@ public class ProfilerTest : EditorWindow
             #region 初始化容器
             ParsingToCsv parcsv = new ParsingToCsv();
             List<List<string>> data = new List<List<string>>();
-            Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>();
-            Dictionary<int, string> funhashMap = new Dictionary<int, string>();
-            Dictionary<int, CaseRender> caserenfunrow = new Dictionary<int, CaseRender>();
+            Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>(5000);
+            Dictionary<string, CaseRender> caserenfunrow = new Dictionary<string, CaseRender>(500);
             int totalcount = lastIndex - firstIndex - 1;
             int rangeCount = totalcount;
             List<CaseFlame> listFrame = new List<CaseFlame>(totalcount);
+            List<TimeLineFunData> listRen = new List<TimeLineFunData>();
             FunctionData now = new FunctionData();
             TimeLineData currentRen = new TimeLineData();
             #endregion
@@ -70,7 +70,6 @@ public class ProfilerTest : EditorWindow
             #region 杂项
             ProfilerTrees prt = new ProfilerTrees();
             prt.shieldSwitch = shieldSwitch;
-            TimeLineFunData ren = new TimeLineFunData();
             Dictionary<string, string> funcnameReplace = new Dictionary<string, string>();
             List<string> funcPathstack = new List<string>();
             #endregion
@@ -88,25 +87,26 @@ public class ProfilerTest : EditorWindow
                     {
                         continue;
                     }
-                    ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
-                    #region 处理主线程函数堆栈数据
-                    CaseFlame cf = new CaseFlame();
-                    cf.frame_id = f;
-                    cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funcPathstack, now);
-                    listFrame.Add(cf);
-                    ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame);
-                    #endregion
-                    funcnameReplace.Clear();
-                    funcPathstack.Clear();
+                    //ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
+                    //#region 处理主线程函数堆栈数据
+                    //CaseFlame cf = new CaseFlame();
+                    //cf.frame_id = f;
+                    //cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funcPathstack, now);
+                    //listFrame.Add(cf);
+                    //ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame);
+                    //#endregion
+                    //funcnameReplace.Clear();
+                    //funcPathstack.Clear();
                     #region 处理渲染线程数据
-                    //ProfilerTool.GetProfilerFrameData(f, renderindex, ref profilerFrame);
-                    //ren = prt.GetRenFunFast(currentRen, profilerFrame, f, renderindex, ref funcnameReplace, ref funcPathstack, ref funhashMap);
-                    //ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren, ref funhashMap); //渲染线程统计数据
-                    //ren.init();
+                    ProfilerTool.GetProfilerFrameData(f, renderindex, ref profilerFrame);
+                    TimeLineFunData ren = new TimeLineFunData();
+                    ren = prt.GetRenFunFast(currentRen, profilerFrame, f, renderindex, ref funcnameReplace, ref funcPathstack);
+                    listRen.Add(ren);
+                    ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren); //渲染线程统计数据
                     #endregion
                     #region 释放空间
-                    prt.stafun.Clear();
-                    //prt.stactime.Clear();
+                    //prt.stafun.Clear();
+                    prt.stactime.Clear();
                     //funcnameReplace.Clear();
                     //funcPathstack.Clear();
                     #endregion
@@ -125,22 +125,22 @@ public class ProfilerTest : EditorWindow
             }
             string filename = "result.bin";
             string filename2 = "result2.bin";
-            var compressData = SerializerObj(listFrame);
-            var compressData2 = SerializerObj(casefunrow);
+            var compressData = SerializerObj(listRen);
+            //var compressData2 = SerializerObj(casefunrow);
             using (FileStream str = new FileStream(Path.Combine(filePath, filename), FileMode.Create))
             {
                 str.Write(compressData, 0, compressData.Length);
             }
-            using (FileStream str = new FileStream(Path.Combine(filePath, filename2), FileMode.Create))
-            {
-                str.Write(compressData2, 0, compressData2.Length);
-            }
+            //using (FileStream str = new FileStream(Path.Combine(filePath, filename2), FileMode.Create))
+            //{
+            //    str.Write(compressData2, 0, compressData2.Length);
+            //}
         }
         if (GUILayout.Button("反序列化测试"))
         {
             string path = "D:\\000\\result.bin";
             FileStream stream = new FileStream(path, FileMode.Open);
-            List<CaseFlame> originalData = ProtoBuf.Serializer.Deserialize<List<CaseFlame>>(stream);
+            List<TimeLineFunData> originalData = ProtoBuf.Serializer.Deserialize<List<TimeLineFunData>>(stream);
             
             stream.Close();
         }
@@ -182,6 +182,26 @@ public class ProfilerTest : EditorWindow
                 stringBuilder.Append(hashBytes[i].ToString("x2"));
             }
             return stringBuilder.ToString();
+        }
+    }
+
+    public byte[] SerializerObj(List<TimeLineFunData> info)
+    {
+        try
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                ProtoBuf.Serializer.Serialize(stream, info);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                return data;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+            return null;
         }
     }
 
