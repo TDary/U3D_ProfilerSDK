@@ -1,7 +1,7 @@
 ﻿using System;
 
 [ProtoBuf.ProtoContract]
-public class CaseFlame
+public struct CaseFlame
 {
     [ProtoBuf.ProtoMember(1)]
     public int frame_id { get; set; }

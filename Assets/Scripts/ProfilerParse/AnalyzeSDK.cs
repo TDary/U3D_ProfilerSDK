@@ -80,10 +80,10 @@ namespace Analyze
 
             if (AnalyzeType == "simple")
             {
-                List<List<string>> csvdata = new List<List<string>>();
+                int totalCount = lastIndex - firstIndex - 1;
+                List<SimpleData> csvdata = new List<SimpleData>(totalCount);
                 ParsingToCsv parcsv = new ParsingToCsv();
                 ProfilerProperty profilerProperty = new ProfilerProperty();
-                int rangeCount = lastIndex - firstIndex - 1;
                 try
                 {
                     for (int f = firstIndex; f < lastIndex; f++)
@@ -93,13 +93,13 @@ namespace Analyze
                             continue;
                         }
                         ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
-                        if (!parcsv.GetSimpleData(profilerProperty, ref f, ref csvdata, ref rangeCount))
+                        if (!parcsv.GetSimpleData(profilerProperty, ref f, ref csvdata))
                         {
                             Debug.Log("跳过了一帧:" + f);
                         }
                     }
                     #region SaveCsvData
-                    CsvFileHelper.SaveCsvFile(CsvPath, csvdata);
+                    SaveCsv(CsvPath, csvdata);
                     #endregion
                     #region SendEndData
                     Debug.Log(AnalyzeType + "解析完成----");
@@ -352,6 +352,42 @@ namespace Analyze
         }
 
         #region 保存文件
+        public void SaveCsv(string filePath, List<SimpleData> csvdata)
+        {
+            if (filePath.Contains("\\"))
+            {
+                string newPath = filePath.Remove(filePath.LastIndexOf('\\'));
+                if (!Directory.Exists(newPath))
+                {
+                    System.IO.Directory.CreateDirectory(newPath);
+                }
+            }
+            //兼容Linux环境的路径
+            else if (filePath.Contains("/"))
+            {
+                string newPath = filePath.Remove(filePath.LastIndexOf('/'));
+                if (!Directory.Exists(newPath))
+                {
+                    System.IO.Directory.CreateDirectory(newPath);
+                }
+            }
+            else
+            {
+                throw new Exception("在文件路径中查找错误");
+            }
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                ProtoBuf.Serializer.Serialize(stream, csvdata);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                FileStream str = new FileStream(filePath, FileMode.Create);
+                str.Write(data, 0, data.Length);
+                stream.Close();
+                str.Close();
+            }
+        }
         public void SaveFun(string filePath, List<CaseFlame> listFrame)
         {
             if (filePath.Contains("\\"))

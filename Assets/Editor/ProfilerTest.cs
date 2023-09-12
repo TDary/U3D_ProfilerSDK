@@ -56,12 +56,12 @@ public class ProfilerTest : EditorWindow
 
             #region 初始化容器
             ParsingToCsv parcsv = new ParsingToCsv();
-            List<List<string>> data = new List<List<string>>();
             Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>(5000);
             Dictionary<string, CaseRender> caserenfunrow = new Dictionary<string, CaseRender>(500);
             int totalcount = lastIndex - firstIndex - 1;
             int rangeCount = totalcount;
             List<CaseFlame> listFrame = new List<CaseFlame>(totalcount);
+            List<SimpleData> csvdata = new List<SimpleData>(totalcount);
             List<TimeLineFunData> listRen = new List<TimeLineFunData>();
             FunctionData now = new FunctionData();
             TimeLineData currentRen = new TimeLineData();
@@ -77,8 +77,7 @@ public class ProfilerTest : EditorWindow
             ProfilerProperty profilerProperty = new ProfilerProperty();
             ProfilerFrameDataIterator profilerFrame = new ProfilerFrameDataIterator();
             #endregion
-            //// 去掉首帧和尾帧
-            var currentTime = DateTime.Now;
+            // 去掉首帧和尾帧
             try
             {
                 for (int f = firstIndex; f < lastIndex; f++)
@@ -87,7 +86,11 @@ public class ProfilerTest : EditorWindow
                     {
                         continue;
                     }
-                    //ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
+                    ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
+                    if (!parcsv.GetSimpleData(profilerProperty, ref f, ref csvdata))
+                    {
+                        Debug.Log("跳过了一帧:" + f);
+                    }
                     //#region 处理主线程函数堆栈数据
                     //CaseFlame cf = new CaseFlame();
                     //cf.frame_id = f;
@@ -97,16 +100,16 @@ public class ProfilerTest : EditorWindow
                     //#endregion
                     //funcnameReplace.Clear();
                     //funcPathstack.Clear();
-                    #region 处理渲染线程数据
-                    ProfilerTool.GetProfilerFrameData(f, renderindex, ref profilerFrame);
-                    TimeLineFunData ren = new TimeLineFunData();
-                    ren = prt.GetRenFunFast(currentRen, profilerFrame, f, renderindex, ref funcnameReplace, ref funcPathstack);
-                    listRen.Add(ren);
-                    ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren); //渲染线程统计数据
-                    #endregion
+                    //#region 处理渲染线程数据
+                    //ProfilerTool.GetProfilerFrameData(f, renderindex, ref profilerFrame);
+                    //TimeLineFunData ren = new TimeLineFunData();
+                    //ren = prt.GetRenFunFast(currentRen, profilerFrame, f, renderindex, ref funcnameReplace, ref funcPathstack);
+                    //listRen.Add(ren);
+                    //ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren); //渲染线程统计数据
+                    //#endregion
                     #region 释放空间
-                    //prt.stafun.Clear();
-                    prt.stactime.Clear();
+                    prt.stafun.Clear();
+                    //prt.stactime.Clear();
                     //funcnameReplace.Clear();
                     //funcPathstack.Clear();
                     #endregion
@@ -125,7 +128,7 @@ public class ProfilerTest : EditorWindow
             }
             string filename = "result.bin";
             string filename2 = "result2.bin";
-            var compressData = SerializerObj(listRen);
+            var compressData = SerializerObj(csvdata);
             //var compressData2 = SerializerObj(casefunrow);
             using (FileStream str = new FileStream(Path.Combine(filePath, filename), FileMode.Create))
             {
@@ -140,7 +143,7 @@ public class ProfilerTest : EditorWindow
         {
             string path = "D:\\000\\result.bin";
             FileStream stream = new FileStream(path, FileMode.Open);
-            List<TimeLineFunData> originalData = ProtoBuf.Serializer.Deserialize<List<TimeLineFunData>>(stream);
+            List<SimpleData> originalData = ProtoBuf.Serializer.Deserialize<List<SimpleData>>(stream);
             
             stream.Close();
         }
@@ -207,6 +210,25 @@ public class ProfilerTest : EditorWindow
         }
     }
 
+    public byte[] SerializerObj(List<SimpleData> info)
+    {
+        try
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                ProtoBuf.Serializer.Serialize(stream, info);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                return data;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+            return null;
+        }
+    }
 
     public byte[] SerializerObj(List<CaseFlame> info)
     {

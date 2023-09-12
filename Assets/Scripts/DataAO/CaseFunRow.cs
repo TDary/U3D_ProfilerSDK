@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 [ProtoBuf.ProtoContract]
-public class CaseFunRow
+public struct CaseFunRow
 {
     //函数hash为主键
     [ProtoBuf.ProtoMember(1)]

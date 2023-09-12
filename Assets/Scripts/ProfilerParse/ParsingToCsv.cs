@@ -47,31 +47,32 @@ public class ParsingToCsv
         return markerId == -1 ? -1L : frameData.GetCounterValueAsLong(markerId);
     }
 
-    public bool GetSimpleData(ProfilerProperty profilerProperty, ref int f, ref List<List<string>> data,ref int rangeCount)
+    public bool GetSimpleData(ProfilerProperty profilerProperty, ref int f, ref List<SimpleData> data)
     {
-        string framFps = profilerProperty.frameFPS;
-        string cpuTotaltime = profilerProperty.frameTime;
+        BaseData baseData = BasicDataAL.AnalyzeData(profilerProperty, f);
+        SimpleData simpledata = new SimpleData();
+        float framFps = float.Parse(profilerProperty.frameFPS);
+        float cpuTotaltime = float.Parse(baseData.CPUTotalTime);
         #region CPU
         AreaData cpuData = CPUDataAL.AnalyzeData(f, f);
-        string renTime = cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Rendering", "0"));
-        string scrisTime = cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Scripts", "0"));
-        string physiTime = cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Physics", "0"));
-        string otherTime = cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Others", "0"));
-        string gcTime = cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("GarbageCollector", "0"));
-        string uiTime = cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("UI", "0"));
-        string vncTime = cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("VSync", "0"));
-        string giTime = cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Global Illumination", "0"));
-        string aniTime = cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Animation", "0"));
+        float renTime = float.Parse(cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Rendering", "0")));
+        float scrisTime = float.Parse(cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Scripts", "0")));
+        float physiTime = float.Parse(cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Physics", "0")));
+        float otherTime = float.Parse(cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Others", "0")));
+        float gcTime = float.Parse(cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("GarbageCollector", "0")));
+        float uiTime = float.Parse(cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("UI", "0")));
+        float vncTime = float.Parse(cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("VSync", "0")));
+        float giTime = float.Parse(cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Global Illumination", "0")));
+        float aniTime = float.Parse(cpuData.WipeOffUnit(cpuData.ProfilerDict.DataDict.GetValue("Animation", "0")));
         #endregion
 #if UNITY_2020_1_OR_NEWER
         RawFrameDataView rawFrameDataView = ProfilerDriver.GetRawFrameDataView(f, 0);
         if (rawFrameDataView != null && rawFrameDataView.valid)
         {
-            long totalusedMemory = GetContextValue(rawFrameDataView, "Total Used Memory");
+            long totalusedMemory = GetContextValue(rawFrameDataView, "Total Used Memory") / 1024 /1024;   //MB
             if (totalusedMemory == 0)
             {
                 Debug.LogWarning("数据异常，跳过该帧：" + f);
-                rangeCount--;
                 return false;
             }
             #region RenderingArea
@@ -94,44 +95,44 @@ public class ParsingToCsv
             long instancebatchTrisCount = GetContextValue(rawFrameDataView, "Instanced Batched Triangles Count");
             long instancebatchVertsCount = GetContextValue(rawFrameDataView, "Instanced Batched Vertices Count");
             long usedTextureCount = GetContextValue(rawFrameDataView, "Used Textures Count");
-            long usedTextureMemory = GetContextValue(rawFrameDataView, "Used Textures Bytes");
+            long usedTextureMemory = GetContextValue(rawFrameDataView, "Used Textures Bytes") / 1024;  //KB
             long renderTextureCount = GetContextValue(rawFrameDataView, "Render Textures Count");
-            long renderTextureMemory = GetContextValue(rawFrameDataView, "Render Textures Bytes");
+            long renderTextureMemory = GetContextValue(rawFrameDataView, "Render Textures Bytes") / 1024;//KB
             long usedBufferCount = GetContextValue(rawFrameDataView, "Used Buffers Count");
-            long usedBufferMemory = GetContextValue(rawFrameDataView, "Used Buffers Bytes");
+            long usedBufferMemory = GetContextValue(rawFrameDataView, "Used Buffers Bytes") / 1024;//KB
             long vBufferCount = GetContextValue(rawFrameDataView, "Vertex Buffer Upload In Frame Count");
-            long vBufferMemory = GetContextValue(rawFrameDataView, "Vertex Buffer Upload In Frame Bytes");
+            long vBufferMemory = GetContextValue(rawFrameDataView, "Vertex Buffer Upload In Frame Bytes") / 1024;//KB
             long inBufferCount = GetContextValue(rawFrameDataView, "Index Buffer Upload In Frame Count");
-            long inBufferMemory = GetContextValue(rawFrameDataView, "Index Buffer Upload In Frame Bytes");
+            long inBufferMemory = GetContextValue(rawFrameDataView, "Index Buffer Upload In Frame Bytes") / 1024;//KB
             long shadowCasterCount  = GetContextValue(rawFrameDataView, "Shadow Casters Count");
             #endregion
             #region MemoryArea
-            long systemusedMemory = GetContextValue(rawFrameDataView, "System Used Memory");
-            long totalreservedMemory = GetContextValue(rawFrameDataView, "Total Reserved Memory");
+            long systemusedMemory = GetContextValue(rawFrameDataView, "System Used Memory") / 1024;
+            long totalreservedMemory = GetContextValue(rawFrameDataView, "Total Reserved Memory") / 1024;
             long untrackedMemory = systemusedMemory - totalreservedMemory;
-            long ManagedUsedHeap = GetContextValue(rawFrameDataView, "GC Used Memory");   //转为了Managed Heap中
-            long ManagedReservedHeap = GetContextValue(rawFrameDataView, "GC Reserved Memory");   //转为了Managed Heap中
-            long GraphicsUsedGD = GetContextValue(rawFrameDataView, "Gfx Used Memory");
-            long audioUsed = GetContextValue(rawFrameDataView, "Audio Reserved Memory");
-            long videoUsed = GetContextValue(rawFrameDataView, "Video Reserved Memory");
-            long profilerUsed = GetContextValue(rawFrameDataView, "Profiler Used Memory");
-            long profilerReserved = GetContextValue(rawFrameDataView, "Profiler Reserved Memory");
+            long ManagedUsedHeap = GetContextValue(rawFrameDataView, "GC Used Memory") / 1024;   //转为了Managed Heap中
+            long ManagedReservedHeap = GetContextValue(rawFrameDataView, "GC Reserved Memory") / 1024;   //转为了Managed Heap中
+            long GraphicsUsedGD = GetContextValue(rawFrameDataView, "Gfx Used Memory") / 1024;
+            long audioUsed = GetContextValue(rawFrameDataView, "Audio Reserved Memory") / 1024;
+            long videoUsed = GetContextValue(rawFrameDataView, "Video Reserved Memory") / 1024;
+            long profilerUsed = GetContextValue(rawFrameDataView, "Profiler Used Memory") / 1024;
+            long profilerReserved = GetContextValue(rawFrameDataView, "Profiler Reserved Memory") / 1024;
             long otherReserved = systemusedMemory - untrackedMemory - ManagedReservedHeap - GraphicsUsedGD - audioUsed - videoUsed - profilerReserved;
             long otherUsed = totalusedMemory - ManagedUsedHeap - GraphicsUsedGD - audioUsed - videoUsed - profilerUsed;
             long textureCount = GetContextValue(rawFrameDataView, "Texture Count");
-            long textureSize = GetContextValue(rawFrameDataView, "Texture Memory");
+            long textureSize = GetContextValue(rawFrameDataView, "Texture Memory") / 1024;
             long meshCount = GetContextValue(rawFrameDataView, "Mesh Count");
-            long meshSize = GetContextValue(rawFrameDataView, "Mesh Memory");
+            long meshSize = GetContextValue(rawFrameDataView, "Mesh Memory") / 1024;
             long matCount = GetContextValue(rawFrameDataView, "Material Count");
-            long matSize = GetContextValue(rawFrameDataView, "Material Memory");
+            long matSize = GetContextValue(rawFrameDataView, "Material Memory") / 1024;
             long animationCount = GetContextValue(rawFrameDataView, "AnimationClip Count");
-            long animaionSize = GetContextValue(rawFrameDataView, "AnimationClip Memory");
+            long animaionSize = GetContextValue(rawFrameDataView, "AnimationClip Memory") / 1024;
             long assetesCount = GetContextValue(rawFrameDataView, "Asset Count");
             long gameobjCount = GetContextValue(rawFrameDataView, "Game Object Count");
             long sceneobjCount = GetContextValue(rawFrameDataView, "Scene Object Count");
             long objCount = GetContextValue(rawFrameDataView, "Object Count");
             long gcframeCount = GetContextValue(rawFrameDataView, "GC Allocation In Frame Count");
-            long gcframeSize = GetContextValue(rawFrameDataView, "GC Allocated In Frame");
+            long gcframeSize = GetContextValue(rawFrameDataView, "GC Allocated In Frame") / 1024;
             #endregion
             #region Audio
 
@@ -151,86 +152,165 @@ public class ParsingToCsv
             long rigidbodiesSynced = GetContextValue(rawFrameDataView, "Rigidbodies Synced");
             long physicsQueries = GetContextValue(rawFrameDataView, "Physics Queries");
             #endregion
-            List<string> row = new List<string>();
-            row.Add(f.ToString());          //B 片段帧数 
-            row.Add(framFps);     //C FPS
-            row.Add(cpuTotaltime); //D CPU total time
-            row.Add(renTime);
-            row.Add(scrisTime);
-            row.Add(physiTime);
-            row.Add(otherTime);
-            row.Add(gcTime);
-            row.Add(uiTime);
-            row.Add(vncTime);
-            row.Add(giTime);
-            row.Add(aniTime);
-            row.Add(totalusedMemory.ToString());
-            row.Add(setpasscallCount.ToString());
-            row.Add(drawcallCount.ToString());
-            row.Add(batchesCount.ToString());
-            row.Add(trianglesCount.ToString());
-            row.Add(verteicesCount.ToString());
-            row.Add(dynamicbatchDrawCallCount.ToString());
-            row.Add(dynamicbatchCount.ToString());
-            row.Add(dynamicbatchTrisCount.ToString());
-            row.Add(dynamicbatchVertsCount.ToString());
-            row.Add(dynamicbatchTime.ToString());
-            row.Add(staticbatchDrawCallCount.ToString());
-            row.Add(staticbatchCount.ToString());
-            row.Add(staticbatchTrisCount.ToString());
-            row.Add(staticbatchVertsCount.ToString());
-            row.Add(instancebatchDrawCallCount.ToString());
-            row.Add(instancebatchCount.ToString());
-            row.Add(instancebatchTrisCount.ToString());
-            row.Add(instancebatchVertsCount.ToString());
-            row.Add(usedTextureCount.ToString());
-            row.Add(usedTextureMemory.ToString());
-            row.Add(renderTextureCount.ToString());
-            row.Add(renderTextureMemory.ToString());
-            row.Add(usedBufferCount.ToString());
-            row.Add(usedBufferMemory.ToString());
-            row.Add(vBufferCount.ToString());
-            row.Add(vBufferMemory.ToString());
-            row.Add(inBufferCount.ToString());
-            row.Add(inBufferMemory.ToString());
-            row.Add(shadowCasterCount.ToString());
-            row.Add(systemusedMemory.ToString());
-            row.Add(totalreservedMemory.ToString());
-            row.Add(untrackedMemory.ToString());
-            row.Add(ManagedUsedHeap.ToString());
-            row.Add(ManagedReservedHeap.ToString());
-            row.Add(GraphicsUsedGD.ToString());
-            row.Add(audioUsed.ToString());
-            row.Add(videoUsed.ToString());
-            row.Add(profilerUsed.ToString());
-            row.Add(profilerReserved.ToString());
-            row.Add(otherReserved.ToString());
-            row.Add(otherUsed.ToString());
-            row.Add(textureCount.ToString());
-            row.Add(textureSize.ToString());
-            row.Add(meshCount.ToString());
-            row.Add(meshSize.ToString());
-            row.Add(matCount.ToString());
-            row.Add(matSize.ToString());
-            row.Add(animationCount.ToString());
-            row.Add(animaionSize.ToString());
-            row.Add(assetesCount.ToString());
-            row.Add(gameobjCount.ToString());
-            row.Add(sceneobjCount.ToString());
-            row.Add(objCount.ToString());
-            row.Add(gcframeCount.ToString());
-            row.Add(gcframeSize.ToString());
-            row.Add(physicsUsedMemory.ToString());
-            row.Add(dynamicBodies.ToString());
-            row.Add(articulationBodies.ToString());
-            row.Add(activeDynamicBodies.ToString());
-            row.Add(activeKinematicBodies.ToString());
-            row.Add(activeConstraints.ToString());
-            row.Add(staticColliders.ToString());
-            row.Add(collidersSynced.ToString());
-            row.Add(rigidbodiesSynced.ToString());
-            row.Add(physicsQueries.ToString());
-            data.Add(row);
+            simpledata.frame = f;
+            simpledata.fps = framFps;
+            simpledata.cpuTTime = cpuTotaltime;
+            simpledata.renTime = renTime;
+            simpledata.scrisTime = scrisTime;
+            simpledata.pyhsTime = physiTime;
+            simpledata.otherTime = otherTime;
+            simpledata.gcTime = gcTime;
+            simpledata.uiTime= uiTime;
+            simpledata.vncTime = vncTime;
+            simpledata.giTime = giTime;
+            simpledata.aniTIme = aniTime;
+            simpledata.setpassCall = setpasscallCount;
+            simpledata.drawCall = drawcallCount;
+            simpledata.batchs = batchesCount;
+            simpledata.tris = trianglesCount;
+            simpledata.vertex = verteicesCount;
+            simpledata.dynamicDrawCall = dynamicbatchDrawCallCount;
+            simpledata.dynamicCount = dynamicbatchCount;
+            simpledata.dynamicTrisCount = dynamicbatchTrisCount;
+            simpledata.dynamicVertsCount = dynamicbatchVertsCount;
+            simpledata.dynamicBatchTime = dynamicbatchTime;
+            simpledata.staticDrawCall = staticbatchDrawCallCount;
+            simpledata.staticCount = staticbatchCount;
+            simpledata.staticTrisCount = staticbatchTrisCount;
+            simpledata.staticVertsCount = staticbatchVertsCount;
+            simpledata.instanceDrawCall = instancebatchDrawCallCount;
+            simpledata.instanceCount = instancebatchCount;
+            simpledata.instanceTrisCount = instancebatchTrisCount;
+            simpledata.instanceVertsCount = instancebatchVertsCount;
+            simpledata.usedTextureCount = usedTextureCount;
+            simpledata.usedTextureMemory = usedTextureMemory;
+            simpledata.renderTextureCount = renderTextureCount;
+            simpledata.renderTextureMemory = renderTextureMemory;
+            simpledata.usedBufferCount = usedBufferCount;
+            simpledata.usedBufferMemory = usedBufferMemory;
+            simpledata.vBufferCount = vBufferCount;
+            simpledata.vBufferMemory = vBufferMemory;
+            simpledata.inBufferCount = inBufferCount;
+            simpledata.inBufferMemory = inBufferMemory;
+            simpledata.systemusedMemory = systemusedMemory;
+            simpledata.totalusedMemory = totalusedMemory;
+            simpledata.totalreservedMemory = totalreservedMemory;
+            simpledata.ManagedReservedHeap = ManagedReservedHeap;
+            simpledata.ManagedUsedHeap = ManagedUsedHeap;
+            simpledata.untrackedMemory = untrackedMemory;
+            simpledata.audioUsed = audioUsed;
+            simpledata.videoUsed = videoUsed;
+            simpledata.profilerReserved = profilerReserved;
+            simpledata.profilerUsed = profilerUsed;
+            simpledata.otherReserved = otherReserved;
+            simpledata.otherUsed = otherUsed;
+            simpledata.textureSize = textureSize;
+            simpledata.textureCount = textureCount;
+            simpledata.meshSize = meshSize;
+            simpledata.meshCount = meshCount;
+            simpledata.matCount = matCount;
+            simpledata.matSize = matSize;
+            simpledata.animationCount = animationCount;
+            simpledata.animaionSize = animaionSize;
+            simpledata.assetesCount = assetesCount;
+            simpledata.gameobjCount = gameobjCount;
+            simpledata.sceneobjCount = sceneobjCount;
+            simpledata.objCount = objCount;
+            simpledata.gcframeCount = gcframeCount;
+            simpledata.gcframeSize = gcframeSize;
+            simpledata.physicsUsedMemory = physicsUsedMemory;
+            simpledata.dynamicBodies = dynamicBodies;
+            simpledata.articulationBodies = articulationBodies;
+            simpledata.activeDynamicBodies = activeDynamicBodies;
+            simpledata.activeKinematicBodies = activeKinematicBodies;
+            simpledata.activeConstraints = activeConstraints;
+            simpledata.staticColliders = staticColliders;
+            simpledata.collidersSynced = collidersSynced;
+            simpledata.rigidbodiesSynced = rigidbodiesSynced;
+            simpledata.physicsQueries = physicsQueries;
+            simpledata.shadowCasterCount = shadowCasterCount;
+            simpledata.GraphicsUsedGD = GraphicsUsedGD;
+            data.Add(simpledata);
+            //List<string> row = new List<string>();
+            //row.Add(f.ToString());          //B 片段帧数 
+            //row.Add(framFps);     //C FPS
+            //row.Add(cpuTotaltime); //D CPU total time
+            //row.Add(renTime);
+            //row.Add(scrisTime);
+            //row.Add(physiTime);
+            //row.Add(otherTime);
+            //row.Add(gcTime);
+            //row.Add(uiTime);
+            //row.Add(vncTime);
+            //row.Add(giTime);
+            //row.Add(aniTime);
+            //row.Add(totalusedMemory.ToString());
+            //row.Add(setpasscallCount.ToString());
+            //row.Add(drawcallCount.ToString());
+            //row.Add(batchesCount.ToString());
+            //row.Add(trianglesCount.ToString());
+            //row.Add(verteicesCount.ToString());
+            //row.Add(dynamicbatchDrawCallCount.ToString());
+            //row.Add(dynamicbatchCount.ToString());
+            //row.Add(dynamicbatchTrisCount.ToString());
+            //row.Add(dynamicbatchVertsCount.ToString());
+            //row.Add(dynamicbatchTime.ToString());
+            //row.Add(staticbatchDrawCallCount.ToString());
+            //row.Add(staticbatchCount.ToString());
+            //row.Add(staticbatchTrisCount.ToString());
+            //row.Add(staticbatchVertsCount.ToString());
+            //row.Add(instancebatchDrawCallCount.ToString());
+            //row.Add(instancebatchCount.ToString());
+            //row.Add(instancebatchTrisCount.ToString());
+            //row.Add(instancebatchVertsCount.ToString());
+            //row.Add(usedTextureCount.ToString());
+            //row.Add(usedTextureMemory.ToString());
+            //row.Add(renderTextureCount.ToString());
+            //row.Add(renderTextureMemory.ToString());
+            //row.Add(usedBufferCount.ToString());
+            //row.Add(usedBufferMemory.ToString());
+            //row.Add(vBufferCount.ToString());
+            //row.Add(vBufferMemory.ToString());
+            //row.Add(inBufferCount.ToString());
+            //row.Add(inBufferMemory.ToString());
+            //row.Add(shadowCasterCount.ToString());
+            //row.Add(systemusedMemory.ToString());
+            //row.Add(totalreservedMemory.ToString());
+            //row.Add(untrackedMemory.ToString());
+            //row.Add(ManagedUsedHeap.ToString());
+            //row.Add(ManagedReservedHeap.ToString());
+            //row.Add(GraphicsUsedGD.ToString());
+            //row.Add(audioUsed.ToString());
+            //row.Add(videoUsed.ToString());
+            //row.Add(profilerUsed.ToString());
+            //row.Add(profilerReserved.ToString());
+            //row.Add(otherReserved.ToString());
+            //row.Add(otherUsed.ToString());
+            //row.Add(textureCount.ToString());
+            //row.Add(textureSize.ToString());
+            //row.Add(meshCount.ToString());
+            //row.Add(meshSize.ToString());
+            //row.Add(matCount.ToString());
+            //row.Add(matSize.ToString());
+            //row.Add(animationCount.ToString());
+            //row.Add(animaionSize.ToString());
+            //row.Add(assetesCount.ToString());
+            //row.Add(gameobjCount.ToString());
+            //row.Add(sceneobjCount.ToString());
+            //row.Add(objCount.ToString());
+            //row.Add(gcframeCount.ToString());
+            //row.Add(gcframeSize.ToString());
+            //row.Add(physicsUsedMemory.ToString());
+            //row.Add(dynamicBodies.ToString());
+            //row.Add(articulationBodies.ToString());
+            //row.Add(activeDynamicBodies.ToString());
+            //row.Add(activeKinematicBodies.ToString());
+            //row.Add(activeConstraints.ToString());
+            //row.Add(staticColliders.ToString());
+            //row.Add(collidersSynced.ToString());
+            //row.Add(rigidbodiesSynced.ToString());
+            //row.Add(physicsQueries.ToString());
+            //data.Add(row);
         }
 #else
         #region Rendering
