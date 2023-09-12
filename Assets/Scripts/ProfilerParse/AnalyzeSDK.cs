@@ -81,7 +81,7 @@ namespace Analyze
             if (AnalyzeType == "simple")
             {
                 int totalCount = lastIndex - firstIndex - 1;
-                List<SimpleData> csvdata = new List<SimpleData>(totalCount);
+                Dictionary<string, Simple> alldata = new Dictionary<string, Simple>(77);   //根据原始数据，设置初始值
                 ParsingToCsv parcsv = new ParsingToCsv();
                 ProfilerProperty profilerProperty = new ProfilerProperty();
                 try
@@ -93,13 +93,13 @@ namespace Analyze
                             continue;
                         }
                         ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
-                        if (!parcsv.GetSimpleData(profilerProperty, ref f, ref csvdata))
+                        if (!parcsv.GetSimpleData(profilerProperty, ref f, ref alldata, ref totalCount))
                         {
                             Debug.Log("跳过了一帧:" + f);
                         }
                     }
                     #region SaveCsvData
-                    SaveCsv(CsvPath, csvdata);
+                    SaveCsv(CsvPath, alldata);
                     #endregion
                     #region SendEndData
                     Debug.Log(AnalyzeType + "解析完成----");
@@ -352,7 +352,7 @@ namespace Analyze
         }
 
         #region 保存文件
-        public void SaveCsv(string filePath, List<SimpleData> csvdata)
+        public void SaveCsv(string filePath, Dictionary<string,Simple> csvdata)
         {
             if (filePath.Contains("\\"))
             {

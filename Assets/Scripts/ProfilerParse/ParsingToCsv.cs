@@ -47,10 +47,9 @@ public class ParsingToCsv
         return markerId == -1 ? -1L : frameData.GetCounterValueAsLong(markerId);
     }
 
-    public bool GetSimpleData(ProfilerProperty profilerProperty, ref int f, ref List<SimpleData> data)
+    public bool GetSimpleData(ProfilerProperty profilerProperty, ref int f, ref Dictionary<string,Simple> alldata,ref int totalcount)
     {
         BaseData baseData = BasicDataAL.AnalyzeData(profilerProperty, f);
-        SimpleData simpledata = new SimpleData();
         float framFps = float.Parse(profilerProperty.frameFPS);
         float cpuTotaltime = float.Parse(baseData.CPUTotalTime);
         #region CPU
@@ -152,165 +151,852 @@ public class ParsingToCsv
             long rigidbodiesSynced = GetContextValue(rawFrameDataView, "Rigidbodies Synced");
             long physicsQueries = GetContextValue(rawFrameDataView, "Physics Queries");
             #endregion
-            simpledata.frame = f;
-            simpledata.fps = framFps;
-            simpledata.cpuTTime = cpuTotaltime;
-            simpledata.renTime = renTime;
-            simpledata.scrisTime = scrisTime;
-            simpledata.pyhsTime = physiTime;
-            simpledata.otherTime = otherTime;
-            simpledata.gcTime = gcTime;
-            simpledata.uiTime= uiTime;
-            simpledata.vncTime = vncTime;
-            simpledata.giTime = giTime;
-            simpledata.aniTIme = aniTime;
-            simpledata.setpassCall = setpasscallCount;
-            simpledata.drawCall = drawcallCount;
-            simpledata.batchs = batchesCount;
-            simpledata.tris = trianglesCount;
-            simpledata.vertex = verteicesCount;
-            simpledata.dynamicDrawCall = dynamicbatchDrawCallCount;
-            simpledata.dynamicCount = dynamicbatchCount;
-            simpledata.dynamicTrisCount = dynamicbatchTrisCount;
-            simpledata.dynamicVertsCount = dynamicbatchVertsCount;
-            simpledata.dynamicBatchTime = dynamicbatchTime;
-            simpledata.staticDrawCall = staticbatchDrawCallCount;
-            simpledata.staticCount = staticbatchCount;
-            simpledata.staticTrisCount = staticbatchTrisCount;
-            simpledata.staticVertsCount = staticbatchVertsCount;
-            simpledata.instanceDrawCall = instancebatchDrawCallCount;
-            simpledata.instanceCount = instancebatchCount;
-            simpledata.instanceTrisCount = instancebatchTrisCount;
-            simpledata.instanceVertsCount = instancebatchVertsCount;
-            simpledata.usedTextureCount = usedTextureCount;
-            simpledata.usedTextureMemory = usedTextureMemory;
-            simpledata.renderTextureCount = renderTextureCount;
-            simpledata.renderTextureMemory = renderTextureMemory;
-            simpledata.usedBufferCount = usedBufferCount;
-            simpledata.usedBufferMemory = usedBufferMemory;
-            simpledata.vBufferCount = vBufferCount;
-            simpledata.vBufferMemory = vBufferMemory;
-            simpledata.inBufferCount = inBufferCount;
-            simpledata.inBufferMemory = inBufferMemory;
-            simpledata.systemusedMemory = systemusedMemory;
-            simpledata.totalusedMemory = totalusedMemory;
-            simpledata.totalreservedMemory = totalreservedMemory;
-            simpledata.ManagedReservedHeap = ManagedReservedHeap;
-            simpledata.ManagedUsedHeap = ManagedUsedHeap;
-            simpledata.untrackedMemory = untrackedMemory;
-            simpledata.audioUsed = audioUsed;
-            simpledata.videoUsed = videoUsed;
-            simpledata.profilerReserved = profilerReserved;
-            simpledata.profilerUsed = profilerUsed;
-            simpledata.otherReserved = otherReserved;
-            simpledata.otherUsed = otherUsed;
-            simpledata.textureSize = textureSize;
-            simpledata.textureCount = textureCount;
-            simpledata.meshSize = meshSize;
-            simpledata.meshCount = meshCount;
-            simpledata.matCount = matCount;
-            simpledata.matSize = matSize;
-            simpledata.animationCount = animationCount;
-            simpledata.animaionSize = animaionSize;
-            simpledata.assetesCount = assetesCount;
-            simpledata.gameobjCount = gameobjCount;
-            simpledata.sceneobjCount = sceneobjCount;
-            simpledata.objCount = objCount;
-            simpledata.gcframeCount = gcframeCount;
-            simpledata.gcframeSize = gcframeSize;
-            simpledata.physicsUsedMemory = physicsUsedMemory;
-            simpledata.dynamicBodies = dynamicBodies;
-            simpledata.articulationBodies = articulationBodies;
-            simpledata.activeDynamicBodies = activeDynamicBodies;
-            simpledata.activeKinematicBodies = activeKinematicBodies;
-            simpledata.activeConstraints = activeConstraints;
-            simpledata.staticColliders = staticColliders;
-            simpledata.collidersSynced = collidersSynced;
-            simpledata.rigidbodiesSynced = rigidbodiesSynced;
-            simpledata.physicsQueries = physicsQueries;
-            simpledata.shadowCasterCount = shadowCasterCount;
-            simpledata.GraphicsUsedGD = GraphicsUsedGD;
-            data.Add(simpledata);
-            //List<string> row = new List<string>();
-            //row.Add(f.ToString());          //B 片段帧数 
-            //row.Add(framFps);     //C FPS
-            //row.Add(cpuTotaltime); //D CPU total time
-            //row.Add(renTime);
-            //row.Add(scrisTime);
-            //row.Add(physiTime);
-            //row.Add(otherTime);
-            //row.Add(gcTime);
-            //row.Add(uiTime);
-            //row.Add(vncTime);
-            //row.Add(giTime);
-            //row.Add(aniTime);
-            //row.Add(totalusedMemory.ToString());
-            //row.Add(setpasscallCount.ToString());
-            //row.Add(drawcallCount.ToString());
-            //row.Add(batchesCount.ToString());
-            //row.Add(trianglesCount.ToString());
-            //row.Add(verteicesCount.ToString());
-            //row.Add(dynamicbatchDrawCallCount.ToString());
-            //row.Add(dynamicbatchCount.ToString());
-            //row.Add(dynamicbatchTrisCount.ToString());
-            //row.Add(dynamicbatchVertsCount.ToString());
-            //row.Add(dynamicbatchTime.ToString());
-            //row.Add(staticbatchDrawCallCount.ToString());
-            //row.Add(staticbatchCount.ToString());
-            //row.Add(staticbatchTrisCount.ToString());
-            //row.Add(staticbatchVertsCount.ToString());
-            //row.Add(instancebatchDrawCallCount.ToString());
-            //row.Add(instancebatchCount.ToString());
-            //row.Add(instancebatchTrisCount.ToString());
-            //row.Add(instancebatchVertsCount.ToString());
-            //row.Add(usedTextureCount.ToString());
-            //row.Add(usedTextureMemory.ToString());
-            //row.Add(renderTextureCount.ToString());
-            //row.Add(renderTextureMemory.ToString());
-            //row.Add(usedBufferCount.ToString());
-            //row.Add(usedBufferMemory.ToString());
-            //row.Add(vBufferCount.ToString());
-            //row.Add(vBufferMemory.ToString());
-            //row.Add(inBufferCount.ToString());
-            //row.Add(inBufferMemory.ToString());
-            //row.Add(shadowCasterCount.ToString());
-            //row.Add(systemusedMemory.ToString());
-            //row.Add(totalreservedMemory.ToString());
-            //row.Add(untrackedMemory.ToString());
-            //row.Add(ManagedUsedHeap.ToString());
-            //row.Add(ManagedReservedHeap.ToString());
-            //row.Add(GraphicsUsedGD.ToString());
-            //row.Add(audioUsed.ToString());
-            //row.Add(videoUsed.ToString());
-            //row.Add(profilerUsed.ToString());
-            //row.Add(profilerReserved.ToString());
-            //row.Add(otherReserved.ToString());
-            //row.Add(otherUsed.ToString());
-            //row.Add(textureCount.ToString());
-            //row.Add(textureSize.ToString());
-            //row.Add(meshCount.ToString());
-            //row.Add(meshSize.ToString());
-            //row.Add(matCount.ToString());
-            //row.Add(matSize.ToString());
-            //row.Add(animationCount.ToString());
-            //row.Add(animaionSize.ToString());
-            //row.Add(assetesCount.ToString());
-            //row.Add(gameobjCount.ToString());
-            //row.Add(sceneobjCount.ToString());
-            //row.Add(objCount.ToString());
-            //row.Add(gcframeCount.ToString());
-            //row.Add(gcframeSize.ToString());
-            //row.Add(physicsUsedMemory.ToString());
-            //row.Add(dynamicBodies.ToString());
-            //row.Add(articulationBodies.ToString());
-            //row.Add(activeDynamicBodies.ToString());
-            //row.Add(activeKinematicBodies.ToString());
-            //row.Add(activeConstraints.ToString());
-            //row.Add(staticColliders.ToString());
-            //row.Add(collidersSynced.ToString());
-            //row.Add(rigidbodiesSynced.ToString());
-            //row.Add(physicsQueries.ToString());
-            //data.Add(row);
+            if (!alldata.ContainsKey("frame"))
+            {
+                Simple data = new Simple();
+                data.field = "frame";
+                data.values = new List<float>(totalcount);
+                data.values.Add(f);
+                alldata.Add("frame", data);
+            }
+            else
+                alldata["frame"].values.Add(f);
+
+            if (!alldata.ContainsKey("fps"))
+            {
+                Simple data = new Simple();
+                data.field = "fps";
+                data.values = new List<float>(totalcount);
+                data.values.Add(framFps);
+                alldata.Add("fps", data);
+            }
+            else
+                alldata["fps"].values.Add(framFps);
+
+            if (!alldata.ContainsKey("cpuTotaltime"))
+            {
+                Simple data = new Simple();
+                data.field = "cpuTotaltime";
+                data.values = new List<float>(totalcount);
+                data.values.Add(cpuTotaltime);
+                alldata.Add("cpuTotaltime", data);
+            }
+            else
+                alldata["cpuTotaltime"].values.Add(cpuTotaltime);
+
+            if (!alldata.ContainsKey("renTime"))
+            {
+                Simple data = new Simple();
+                data.field = "renTime";
+                data.values = new List<float>(totalcount);
+                data.values.Add(renTime);
+                alldata.Add("renTime", data);
+            }
+            else
+                alldata["renTime"].values.Add(renTime);
+
+            if (!alldata.ContainsKey("scrisTime"))
+            {
+                Simple data = new Simple();
+                data.field = "scrisTime";
+                data.values = new List<float>(totalcount);
+                data.values.Add(scrisTime);
+                alldata.Add("scrisTime", data);
+            }
+            else
+                alldata["scrisTime"].values.Add(scrisTime);
+
+            if (!alldata.ContainsKey("physiTime"))
+            {
+                Simple data = new Simple();
+                data.field = "physiTime";
+                data.values = new List<float>(totalcount);
+                data.values.Add(physiTime);
+                alldata.Add("physiTime", data);
+            }
+            else
+                alldata["physiTime"].values.Add(physiTime);
+
+            if (!alldata.ContainsKey("otherTime"))
+            {
+                Simple data = new Simple();
+                data.field = "otherTime";
+                data.values = new List<float>(totalcount);
+                data.values.Add(otherTime);
+                alldata.Add("otherTime", data);
+            }
+            else
+                alldata["otherTime"].values.Add(otherTime);
+
+            if (!alldata.ContainsKey("gcTime"))
+            {
+                Simple data = new Simple();
+                data.field = "gcTime";
+                data.values = new List<float>(totalcount);
+                data.values.Add(gcTime);
+                alldata.Add("gcTime", data);
+            }
+            else
+                alldata["gcTime"].values.Add(gcTime);
+
+            if (!alldata.ContainsKey("uiTime"))
+            {
+                Simple data = new Simple();
+                data.field = "uiTime";
+                data.values = new List<float>(totalcount);
+                data.values.Add(uiTime);
+                alldata.Add("uiTime", data);
+            }
+            else
+                alldata["uiTime"].values.Add(uiTime);
+
+            if (!alldata.ContainsKey("vncTime"))
+            {
+                Simple data = new Simple();
+                data.field = "vncTime";
+                data.values = new List<float>(totalcount);
+                data.values.Add(vncTime);
+                alldata.Add("vncTime", data);
+            }
+            else
+                alldata["vncTime"].values.Add(vncTime);
+
+            if (!alldata.ContainsKey("giTime"))
+            {
+                Simple data = new Simple();
+                data.field = "giTime";
+                data.values = new List<float>(totalcount);
+                data.values.Add(giTime);
+                alldata.Add("giTime", data);
+            }
+            else
+                alldata["giTime"].values.Add(giTime);
+
+            if (!alldata.ContainsKey("aniTime"))
+            {
+                Simple data = new Simple();
+                data.field = "aniTime";
+                data.values = new List<float>(totalcount);
+                data.values.Add(aniTime);
+                alldata.Add("aniTime", data);
+            }
+            else
+                alldata["aniTime"].values.Add(aniTime);
+
+            if (!alldata.ContainsKey("setpassCall"))
+            {
+                Simple data = new Simple();
+                data.field = "setpassCall";
+                data.values = new List<float>(totalcount);
+                data.values.Add(setpasscallCount);
+                alldata.Add("setpassCall", data);
+            }
+            else
+                alldata["setpassCall"].values.Add(setpasscallCount);
+
+            if (!alldata.ContainsKey("drawCall"))
+            {
+                Simple data = new Simple();
+                data.field = "drawCall";
+                data.values = new List<float>(totalcount);
+                data.values.Add(drawcallCount);
+                alldata.Add("drawCall", data);
+            }
+            else
+                alldata["drawCall"].values.Add(drawcallCount);
+
+            if (!alldata.ContainsKey("batchs"))
+            {
+                Simple data = new Simple();
+                data.field = "batchs";
+                data.values = new List<float>(totalcount);
+                data.values.Add(batchesCount);
+                alldata.Add("batchs", data);
+            }
+            else
+                alldata["batchs"].values.Add(batchesCount);
+
+            if (!alldata.ContainsKey("tris"))
+            {
+                Simple data = new Simple();
+                data.field = "tris";
+                data.values = new List<float>(totalcount);
+                data.values.Add(trianglesCount);
+                alldata.Add("tris", data);
+            }
+            else
+                alldata["tris"].values.Add(trianglesCount);
+
+            if (!alldata.ContainsKey("vertex"))
+            {
+                Simple data = new Simple();
+                data.field = "vertex";
+                data.values = new List<float>(totalcount);
+                data.values.Add(verteicesCount);
+                alldata.Add("vertex", data);
+            }
+            else
+                alldata["vertex"].values.Add(verteicesCount);
+
+            if (!alldata.ContainsKey("dynamicDrawCall"))
+            {
+                Simple data = new Simple();
+                data.field = "dynamicDrawCall";
+                data.values = new List<float>(totalcount);
+                data.values.Add(dynamicbatchDrawCallCount);
+                alldata.Add("dynamicDrawCall", data);
+            }
+            else
+                alldata["dynamicDrawCall"].values.Add(dynamicbatchDrawCallCount);
+
+            if (!alldata.ContainsKey("dynamicCount"))
+            {
+                Simple data = new Simple();
+                data.field = "dynamicCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(dynamicbatchCount);
+                alldata.Add("dynamicCount", data);
+            }
+            else
+                alldata["dynamicCount"].values.Add(dynamicbatchCount);
+
+            if (!alldata.ContainsKey("dynamicTrisCount"))
+            {
+                Simple data = new Simple();
+                data.field = "dynamicTrisCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(dynamicbatchTrisCount);
+                alldata.Add("dynamicTrisCount", data);
+            }
+            else
+                alldata["dynamicTrisCount"].values.Add(dynamicbatchTrisCount);
+
+            if (!alldata.ContainsKey("dynamicVertsCount"))
+            {
+                Simple data = new Simple();
+                data.field = "dynamicVertsCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(dynamicbatchVertsCount);
+                alldata.Add("dynamicVertsCount", data);
+            }
+            else
+                alldata["dynamicVertsCount"].values.Add(dynamicbatchVertsCount);
+
+            if (!alldata.ContainsKey("dynamicBatchTime"))
+            {
+                Simple data = new Simple();
+                data.field = "dynamicBatchTime";
+                data.values = new List<float>(totalcount);
+                data.values.Add(dynamicbatchTime);
+                alldata.Add("dynamicBatchTime", data);
+            }
+            else
+                alldata["dynamicBatchTime"].values.Add(dynamicbatchTime);
+
+            if (!alldata.ContainsKey("staticDrawCall"))
+            {
+                Simple data = new Simple();
+                data.field = "staticDrawCall";
+                data.values = new List<float>(totalcount);
+                data.values.Add(staticbatchDrawCallCount);
+                alldata.Add("staticDrawCall", data);
+            }
+            else
+                alldata["staticDrawCall"].values.Add(staticbatchDrawCallCount);
+
+            if (!alldata.ContainsKey("staticCount"))
+            {
+                Simple data = new Simple();
+                data.field = "staticCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(staticbatchCount);
+                alldata.Add("staticCount", data);
+            }
+            else
+                alldata["staticCount"].values.Add(staticbatchCount);
+
+            if (!alldata.ContainsKey("staticTrisCount"))
+            {
+                Simple data = new Simple();
+                data.field = "staticTrisCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(staticbatchTrisCount);
+                alldata.Add("staticTrisCount", data);
+            }
+            else
+                alldata["staticTrisCount"].values.Add(staticbatchTrisCount);
+
+            if (!alldata.ContainsKey("staticVertsCount"))
+            {
+                Simple data = new Simple();
+                data.field = "staticVertsCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(staticbatchVertsCount);
+                alldata.Add("staticVertsCount", data);
+            }
+            else
+                alldata["staticVertsCount"].values.Add(staticbatchVertsCount);
+
+            if (!alldata.ContainsKey("instanceDrawCall"))
+            {
+                Simple data = new Simple();
+                data.field = "instanceDrawCall";
+                data.values = new List<float>(totalcount);
+                data.values.Add(instancebatchDrawCallCount);
+                alldata.Add("instanceDrawCall", data);
+            }
+            else
+                alldata["instanceDrawCall"].values.Add(instancebatchDrawCallCount);
+
+            if (!alldata.ContainsKey("instanceCount"))
+            {
+                Simple data = new Simple();
+                data.field = "instanceCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(instancebatchCount);
+                alldata.Add("instanceCount", data);
+            }
+            else
+                alldata["instanceCount"].values.Add(instancebatchCount);
+
+            if (!alldata.ContainsKey("instanceTrisCount"))
+            {
+                Simple data = new Simple();
+                data.field = "instanceTrisCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(instancebatchTrisCount);
+                alldata.Add("instanceTrisCount", data);
+            }
+            else
+                alldata["instanceTrisCount"].values.Add(instancebatchTrisCount);
+
+            if (!alldata.ContainsKey("instanceVertsCount"))
+            {
+                Simple data = new Simple();
+                data.field = "instanceVertsCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(instancebatchVertsCount);
+                alldata.Add("instanceVertsCount", data);
+            }
+            else
+                alldata["instanceVertsCount"].values.Add(instancebatchVertsCount);
+
+            if (!alldata.ContainsKey("usedTextureCount"))
+            {
+                Simple data = new Simple();
+                data.field = "usedTextureCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(usedTextureCount);
+                alldata.Add("usedTextureCount", data);
+            }
+            else
+                alldata["usedTextureCount"].values.Add(usedTextureCount);
+
+            if (!alldata.ContainsKey("usedTextureMemory"))
+            {
+                Simple data = new Simple();
+                data.field = "usedTextureMemory";
+                data.values = new List<float>(totalcount);
+                data.values.Add(usedTextureMemory);
+                alldata.Add("usedTextureMemory", data);
+            }
+            else
+                alldata["usedTextureMemory"].values.Add(usedTextureMemory);
+
+            if (!alldata.ContainsKey("renderTextureCount"))
+            {
+                Simple data = new Simple();
+                data.field = "renderTextureCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(renderTextureCount);
+                alldata.Add("renderTextureCount", data);
+            }
+            else
+                alldata["renderTextureCount"].values.Add(renderTextureCount);
+
+            if (!alldata.ContainsKey("renderTextureMemory"))
+            {
+                Simple data = new Simple();
+                data.field = "renderTextureMemory";
+                data.values = new List<float>(totalcount);
+                data.values.Add(renderTextureMemory);
+                alldata.Add("renderTextureMemory", data);
+            }
+            else
+                alldata["renderTextureMemory"].values.Add(renderTextureMemory);
+
+            if (!alldata.ContainsKey("usedBufferCount"))
+            {
+                Simple data = new Simple();
+                data.field = "usedBufferCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(usedBufferCount);
+                alldata.Add("usedBufferCount", data);
+            }
+            else
+                alldata["usedBufferCount"].values.Add(usedBufferCount);
+
+            if (!alldata.ContainsKey("usedBufferMemory"))
+            {
+                Simple data = new Simple();
+                data.field = "usedBufferMemory";
+                data.values = new List<float>(totalcount);
+                data.values.Add(usedBufferMemory);
+                alldata.Add("usedBufferMemory", data);
+            }
+            else
+                alldata["usedBufferMemory"].values.Add(usedBufferMemory);
+
+            if (!alldata.ContainsKey("vBufferCount"))
+            {
+                Simple data = new Simple();
+                data.field = "vBufferCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(vBufferCount);
+                alldata.Add("vBufferCount", data);
+            }
+            else
+                alldata["vBufferCount"].values.Add(vBufferCount);
+
+            if (!alldata.ContainsKey("vBufferMemory"))
+            {
+                Simple data = new Simple();
+                data.field = "vBufferMemory";
+                data.values = new List<float>(totalcount);
+                data.values.Add(vBufferMemory);
+                alldata.Add("vBufferMemory", data);
+            }
+            else
+                alldata["vBufferMemory"].values.Add(vBufferMemory);
+
+            if (!alldata.ContainsKey("inBufferCount"))
+            {
+                Simple data = new Simple();
+                data.field = "inBufferCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(inBufferCount);
+                alldata.Add("inBufferCount", data);
+            }
+            else
+                alldata["inBufferCount"].values.Add(inBufferCount);
+
+            if (!alldata.ContainsKey("inBufferMemory"))
+            {
+                Simple data = new Simple();
+                data.field = "inBufferMemory";
+                data.values = new List<float>(totalcount);
+                data.values.Add(inBufferMemory);
+                alldata.Add("inBufferMemory", data);
+            }
+            else
+                alldata["inBufferMemory"].values.Add(inBufferMemory);
+
+            if (!alldata.ContainsKey("systemusedMemory"))
+            {
+                Simple data = new Simple();
+                data.field = "systemusedMemory";
+                data.values = new List<float>(totalcount);
+                data.values.Add(systemusedMemory);
+                alldata.Add("systemusedMemory", data);
+            }
+            else
+                alldata["systemusedMemory"].values.Add(systemusedMemory);
+
+            if (!alldata.ContainsKey("totalusedMemory"))
+            {
+                Simple data = new Simple();
+                data.field = "totalusedMemory";
+                data.values = new List<float>(totalcount);
+                data.values.Add(totalusedMemory);
+                alldata.Add("totalusedMemory", data);
+            }
+            else
+                alldata["totalusedMemory"].values.Add(totalusedMemory);
+
+            if (!alldata.ContainsKey("totalreservedMemory"))
+            {
+                Simple data = new Simple();
+                data.field = "totalreservedMemory";
+                data.values = new List<float>(totalcount);
+                data.values.Add(totalreservedMemory);
+                alldata.Add("totalreservedMemory", data);
+            }
+            else
+                alldata["totalreservedMemory"].values.Add(totalreservedMemory);
+
+            if (!alldata.ContainsKey("ManagedReservedHeap"))
+            {
+                Simple data = new Simple();
+                data.field = "ManagedReservedHeap";
+                data.values = new List<float>(totalcount);
+                data.values.Add(ManagedReservedHeap);
+                alldata.Add("ManagedReservedHeap", data);
+            }
+            else
+                alldata["ManagedReservedHeap"].values.Add(ManagedReservedHeap);
+
+            if (!alldata.ContainsKey("ManagedUsedHeap"))
+            {
+                Simple data = new Simple();
+                data.field = "ManagedUsedHeap";
+                data.values = new List<float>(totalcount);
+                data.values.Add(ManagedUsedHeap);
+                alldata.Add("ManagedUsedHeap", data);
+            }
+            else
+                alldata["ManagedUsedHeap"].values.Add(ManagedUsedHeap);
+
+            if (!alldata.ContainsKey("untrackedMemory"))
+            {
+                Simple data = new Simple();
+                data.field = "untrackedMemory";
+                data.values = new List<float>(totalcount);
+                data.values.Add(untrackedMemory);
+                alldata.Add("untrackedMemory", data);
+            }
+            else
+                alldata["untrackedMemory"].values.Add(untrackedMemory);
+
+            if (!alldata.ContainsKey("audioUsed"))
+            {
+                Simple data = new Simple();
+                data.field = "audioUsed";
+                data.values = new List<float>(totalcount);
+                data.values.Add(audioUsed);
+                alldata.Add("audioUsed", data);
+            }
+            else
+                alldata["audioUsed"].values.Add(audioUsed);
+
+            if (!alldata.ContainsKey("videoUsed"))
+            {
+                Simple data = new Simple();
+                data.field = "videoUsed";
+                data.values = new List<float>(totalcount);
+                data.values.Add(videoUsed);
+                alldata.Add("videoUsed", data);
+            }
+            else
+                alldata["videoUsed"].values.Add(videoUsed);
+
+            if (!alldata.ContainsKey("profilerReserved"))
+            {
+                Simple data = new Simple();
+                data.field = "profilerReserved";
+                data.values = new List<float>(totalcount);
+                data.values.Add(profilerReserved);
+                alldata.Add("profilerReserved", data);
+            }
+            else
+                alldata["profilerReserved"].values.Add(profilerReserved);
+
+            if (!alldata.ContainsKey("otherReserved"))
+            {
+                Simple data = new Simple();
+                data.field = "otherReserved";
+                data.values = new List<float>(totalcount);
+                data.values.Add(otherReserved);
+                alldata.Add("otherReserved", data);
+            }
+            else
+                alldata["otherReserved"].values.Add(otherReserved);
+
+            if (!alldata.ContainsKey("otherUsed"))
+            {
+                Simple data = new Simple();
+                data.field = "otherUsed";
+                data.values = new List<float>(totalcount);
+                data.values.Add(otherUsed);
+                alldata.Add("otherUsed", data);
+            }
+            else
+                alldata["otherUsed"].values.Add(otherUsed);
+
+            if (!alldata.ContainsKey("textureSize"))
+            {
+                Simple data = new Simple();
+                data.field = "textureSize";
+                data.values = new List<float>(totalcount);
+                data.values.Add(textureSize);
+                alldata.Add("textureSize", data);
+            }
+            else
+                alldata["textureSize"].values.Add(textureSize);
+
+            if (!alldata.ContainsKey("textureCount"))
+            {
+                Simple data = new Simple();
+                data.field = "textureCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(textureCount);
+                alldata.Add("textureCount", data);
+            }
+            else
+                alldata["textureCount"].values.Add(textureCount);
+
+            if (!alldata.ContainsKey("meshSize"))
+            {
+                Simple data = new Simple();
+                data.field = "meshSize";
+                data.values = new List<float>(totalcount);
+                data.values.Add(meshSize);
+                alldata.Add("meshSize", data);
+            }
+            else
+                alldata["meshSize"].values.Add(meshSize);
+
+            if (!alldata.ContainsKey("meshCount"))
+            {
+                Simple data = new Simple();
+                data.field = "meshCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(meshCount);
+                alldata.Add("meshCount", data);
+            }
+            else
+                alldata["meshCount"].values.Add(meshCount);
+
+            if (!alldata.ContainsKey("matCount"))
+            {
+                Simple data = new Simple();
+                data.field = "matCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(matCount);
+                alldata.Add("matCount", data);
+            }
+            else
+                alldata["matCount"].values.Add(matCount);
+
+            if (!alldata.ContainsKey("matSize"))
+            {
+                Simple data = new Simple();
+                data.field = "matSize";
+                data.values = new List<float>(totalcount);
+                data.values.Add(matSize);
+                alldata.Add("matSize", data);
+            }
+            else
+                alldata["matSize"].values.Add(matSize);
+
+            if (!alldata.ContainsKey("animationCount"))
+            {
+                Simple data = new Simple();
+                data.field = "animationCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(animationCount);
+                alldata.Add("animationCount", data);
+            }
+            else
+                alldata["animationCount"].values.Add(animationCount);
+
+            if (!alldata.ContainsKey("animaionSize"))
+            {
+                Simple data = new Simple();
+                data.field = "animaionSize";
+                data.values = new List<float>(totalcount);
+                data.values.Add(animaionSize);
+                alldata.Add("animaionSize", data);
+            }
+            else
+                alldata["animaionSize"].values.Add(animaionSize);
+
+            if (!alldata.ContainsKey("assetesCount"))
+            {
+                Simple data = new Simple();
+                data.field = "assetesCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(assetesCount);
+                alldata.Add("assetesCount", data);
+            }
+            else
+                alldata["assetesCount"].values.Add(assetesCount);
+
+            if (!alldata.ContainsKey("gameobjCount"))
+            {
+                Simple data = new Simple();
+                data.field = "gameobjCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(gameobjCount);
+                alldata.Add("gameobjCount", data);
+            }
+            else
+                alldata["gameobjCount"].values.Add(gameobjCount);
+
+            if (!alldata.ContainsKey("sceneobjCount"))
+            {
+                Simple data = new Simple();
+                data.field = "sceneobjCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(sceneobjCount);
+                alldata.Add("sceneobjCount", data);
+            }
+            else
+                alldata["sceneobjCount"].values.Add(sceneobjCount);
+
+            if (!alldata.ContainsKey("objCount"))
+            {
+                Simple data = new Simple();
+                data.field = "objCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(objCount);
+                alldata.Add("objCount", data);
+            }
+            else
+                alldata["objCount"].values.Add(objCount);
+
+            if (!alldata.ContainsKey("gcframeCount"))
+            {
+                Simple data = new Simple();
+                data.field = "gcframeCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(gcframeCount);
+                alldata.Add("gcframeCount", data);
+            }
+            else
+                alldata["gcframeCount"].values.Add(gcframeCount);
+
+            if (!alldata.ContainsKey("gcframeSize"))
+            {
+                Simple data = new Simple();
+                data.field = "gcframeSize";
+                data.values = new List<float>(totalcount);
+                data.values.Add(gcframeSize);
+                alldata.Add("gcframeSize", data);
+            }
+            else
+                alldata["gcframeSize"].values.Add(gcframeSize);
+
+            if (!alldata.ContainsKey("physicsUsedMemory"))
+            {
+                Simple data = new Simple();
+                data.field = "physicsUsedMemory";
+                data.values = new List<float>(totalcount);
+                data.values.Add(physicsUsedMemory);
+                alldata.Add("physicsUsedMemory", data);
+            }
+            else
+                alldata["physicsUsedMemory"].values.Add(physicsUsedMemory);
+
+            if (!alldata.ContainsKey("dynamicBodies"))
+            {
+                Simple data = new Simple();
+                data.field = "dynamicBodies";
+                data.values = new List<float>(totalcount);
+                data.values.Add(dynamicBodies);
+                alldata.Add("dynamicBodies", data);
+            }
+            else
+                alldata["dynamicBodies"].values.Add(dynamicBodies);
+
+            if (!alldata.ContainsKey("articulationBodies"))
+            {
+                Simple data = new Simple();
+                data.field = "articulationBodies";
+                data.values = new List<float>(totalcount);
+                data.values.Add(articulationBodies);
+                alldata.Add("articulationBodies", data);
+            }
+            else
+                alldata["articulationBodies"].values.Add(articulationBodies);
+
+            if (!alldata.ContainsKey("activeDynamicBodies"))
+            {
+                Simple data = new Simple();
+                data.field = "activeDynamicBodies";
+                data.values = new List<float>(totalcount);
+                data.values.Add(activeDynamicBodies);
+                alldata.Add("activeDynamicBodies", data);
+            }
+            else
+                alldata["activeDynamicBodies"].values.Add(activeDynamicBodies);
+
+            if (!alldata.ContainsKey("activeKinematicBodies"))
+            {
+                Simple data = new Simple();
+                data.field = "activeKinematicBodies";
+                data.values = new List<float>(totalcount);
+                data.values.Add(activeKinematicBodies);
+                alldata.Add("activeKinematicBodies", data);
+            }
+            else
+                alldata["activeKinematicBodies"].values.Add(activeKinematicBodies);
+
+            if (!alldata.ContainsKey("activeConstraints"))
+            {
+                Simple data = new Simple();
+                data.field = "activeConstraints";
+                data.values = new List<float>(totalcount);
+                data.values.Add(activeConstraints);
+                alldata.Add("activeConstraints", data);
+            }
+            else
+                alldata["activeConstraints"].values.Add(activeConstraints);
+
+            if (!alldata.ContainsKey("staticColliders"))
+            {
+                Simple data = new Simple();
+                data.field = "staticColliders";
+                data.values = new List<float>(totalcount);
+                data.values.Add(staticColliders);
+                alldata.Add("staticColliders", data);
+            }
+            else
+                alldata["staticColliders"].values.Add(staticColliders);
+
+            if (!alldata.ContainsKey("collidersSynced"))
+            {
+                Simple data = new Simple();
+                data.field = "collidersSynced";
+                data.values = new List<float>(totalcount);
+                data.values.Add(collidersSynced);
+                alldata.Add("collidersSynced", data);
+            }
+            else
+                alldata["collidersSynced"].values.Add(collidersSynced);
+
+            if (!alldata.ContainsKey("rigidbodiesSynced"))
+            {
+                Simple data = new Simple();
+                data.field = "rigidbodiesSynced";
+                data.values = new List<float>(totalcount);
+                data.values.Add(rigidbodiesSynced);
+                alldata.Add("rigidbodiesSynced", data);
+            }
+            else
+                alldata["rigidbodiesSynced"].values.Add(rigidbodiesSynced);
+
+            if (!alldata.ContainsKey("physicsQueries"))
+            {
+                Simple data = new Simple();
+                data.field = "physicsQueries";
+                data.values = new List<float>(totalcount);
+                data.values.Add(physicsQueries);
+                alldata.Add("physicsQueries", data);
+            }
+            else
+                alldata["physicsQueries"].values.Add(physicsQueries);
+
+            if (!alldata.ContainsKey("shadowCasterCount"))
+            {
+                Simple data = new Simple();
+                data.field = "shadowCasterCount";
+                data.values = new List<float>(totalcount);
+                data.values.Add(shadowCasterCount);
+                alldata.Add("shadowCasterCount", data);
+            }
+            else
+                alldata["shadowCasterCount"].values.Add(shadowCasterCount);
+
+            if (!alldata.ContainsKey("GraphicsUsedGD"))
+            {
+                Simple data = new Simple();
+                data.field = "GraphicsUsedGD";
+                data.values = new List<float>(totalcount);
+                data.values.Add(GraphicsUsedGD);
+                alldata.Add("GraphicsUsedGD", data);
+            }
+            else
+                alldata["GraphicsUsedGD"].values.Add(GraphicsUsedGD);
         }
 #else
         #region Rendering

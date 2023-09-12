@@ -61,7 +61,7 @@ public class ProfilerTest : EditorWindow
             int totalcount = lastIndex - firstIndex - 1;
             int rangeCount = totalcount;
             List<CaseFlame> listFrame = new List<CaseFlame>(totalcount);
-            List<SimpleData> csvdata = new List<SimpleData>(totalcount);
+            Dictionary<string,Simple> alldata = new Dictionary<string, Simple>(77);
             List<TimeLineFunData> listRen = new List<TimeLineFunData>();
             FunctionData now = new FunctionData();
             TimeLineData currentRen = new TimeLineData();
@@ -87,7 +87,7 @@ public class ProfilerTest : EditorWindow
                         continue;
                     }
                     ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
-                    if (!parcsv.GetSimpleData(profilerProperty, ref f, ref csvdata))
+                    if (!parcsv.GetSimpleData(profilerProperty, ref f, ref alldata,ref totalcount))
                     {
                         Debug.Log("跳过了一帧:" + f);
                     }
@@ -126,9 +126,10 @@ public class ProfilerTest : EditorWindow
             {
                 System.IO.Directory.CreateDirectory(filePath);
             }
+
             string filename = "result.bin";
             string filename2 = "result2.bin";
-            var compressData = SerializerObj(csvdata);
+            var compressData = SerializerObj(alldata);
             //var compressData2 = SerializerObj(casefunrow);
             using (FileStream str = new FileStream(Path.Combine(filePath, filename), FileMode.Create))
             {
@@ -143,9 +144,15 @@ public class ProfilerTest : EditorWindow
         {
             string path = "D:\\000\\result.bin";
             FileStream stream = new FileStream(path, FileMode.Open);
-            List<SimpleData> originalData = ProtoBuf.Serializer.Deserialize<List<SimpleData>>(stream);
-            
+            Dictionary<string,Simple> originalData = ProtoBuf.Serializer.Deserialize<Dictionary<string, Simple>>(stream);
             stream.Close();
+            foreach (var item in originalData)
+            {
+                if(item.Value.values.Count!=298)
+                {
+                    Debug.Log(item.Key); ///
+                }
+            }
         }
         if (GUILayout.Button("测试新接口"))
         {
@@ -210,7 +217,7 @@ public class ProfilerTest : EditorWindow
         }
     }
 
-    public byte[] SerializerObj(List<SimpleData> info)
+    public byte[] SerializerObj(Dictionary<string,Simple> info)
     {
         try
         {
