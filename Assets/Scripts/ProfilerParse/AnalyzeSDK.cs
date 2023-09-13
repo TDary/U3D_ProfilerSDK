@@ -81,6 +81,7 @@ namespace Analyze
             if (AnalyzeType == "simple")
             {
                 int totalCount = lastIndex - firstIndex - 1;
+                List<Simple> simpledatas = new List<Simple>(77);  //转为List好反序列化
                 Dictionary<string, Simple> alldata = new Dictionary<string, Simple>(77);   //根据原始数据，设置初始值
                 ParsingToCsv parcsv = new ParsingToCsv();
                 ProfilerProperty profilerProperty = new ProfilerProperty();
@@ -98,8 +99,12 @@ namespace Analyze
                             Debug.Log("跳过了一帧:" + f);
                         }
                     }
+                    foreach(var item in alldata.Values)
+                    {
+                        simpledatas.Add(item);
+                    }
                     #region SaveCsvData
-                    SaveCsv(CsvPath, alldata);
+                    SaveCsv(CsvPath, simpledatas);
                     #endregion
                     #region SendEndData
                     Debug.Log(AnalyzeType + "解析完成----");
@@ -150,6 +155,7 @@ namespace Analyze
             else if (AnalyzeType == "funprofiler")
             {
                 Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>(5000);
+                List<CaseFunRow> allcaseFunRow = new List<CaseFunRow>(5000);
                 //Dictionary<string, CaseRender> caserenfunrow = new Dictionary<string, CaseRender>(500);
                 int totalCount = lastIndex - firstIndex - 1;
                 FunctionData now = new FunctionData();
@@ -194,9 +200,13 @@ namespace Analyze
                         funcPathstack.Clear();
                         #endregion
                     }
+                    foreach(var item in casefunrow.Values)
+                    {
+                        allcaseFunRow.Add(item);
+                    }
                     #region SaveData
                     SaveFun(FunPath, listFrame);
-                    SaveFunRow(FunRowPath, casefunrow);
+                    SaveFunRow(FunRowPath, allcaseFunRow);
                     //SaveRenderRow(FunRenderRowPath, caserenfunrow);   //暂时不用渲染线程
                     //SaveRenderFun(RenFunPath, listRen);
                     #region SendMessageForSuccess
@@ -352,7 +362,7 @@ namespace Analyze
         }
 
         #region 保存文件
-        public void SaveCsv(string filePath, Dictionary<string,Simple> csvdata)
+        public void SaveCsv(string filePath,List<Simple> csvdata)
         {
             if (filePath.Contains("\\"))
             {
@@ -425,7 +435,7 @@ namespace Analyze
             }
         }
 
-        public void SaveFunRow(string filePath, Dictionary<string, CaseFunRow> casefunrow)
+        public void SaveFunRow(string filePath, List< CaseFunRow> casefunrow)
         {
             if (filePath.Contains("\\"))
             {
