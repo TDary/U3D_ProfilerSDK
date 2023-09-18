@@ -48,7 +48,11 @@ namespace Analyze
             //RenFunPath = comd.ContainsKey("-renfunPath") ? comd["-renfunPath"] : "/funbin";
             //FunRenderRowPath = comd.ContainsKey("-funrenderrowPath") ? comd["-funrenderrowPath"] : "/funbin";
             AnalyzeType = comd.ContainsKey("-analyzeType") ? comd["-analyzeType"] : "";
-            shieldSwitch = Convert.ToBoolean(comd.ContainsKey("-shieldSwitch") ? comd["-shieldSwitch"] : "");
+            string switchS = comd.ContainsKey("-shieldSwitch") ? comd["-shieldSwitch"] : "";
+            if (!string.IsNullOrEmpty(switchS))
+            {
+                shieldSwitch = Convert.ToBoolean(switchS);
+            }
             ServerUrl = comd.ContainsKey("-ServerUrl") ? comd["-ServerUrl"] : "";
 
             if (RawPath == "")
