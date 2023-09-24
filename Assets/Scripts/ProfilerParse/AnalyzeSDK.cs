@@ -209,10 +209,16 @@ namespace Analyze
                         allcaseFunRow.Add(item);
                     }
                     #region SaveData
-                    SaveFun(FunPath, listFrame);
-                    SaveFunRow(FunRowPath, allcaseFunRow);
-                    //SaveRenderRow(FunRenderRowPath, caserenfunrow);   //暂时不用渲染线程
-                    //SaveRenderFun(RenFunPath, listRen);
+                    if (listFrame.Count != 0 && allcaseFunRow.Count != 0)
+                    {
+
+                        SaveFun(FunPath, listFrame);
+                        SaveFunRow(FunRowPath, allcaseFunRow);
+                        //SaveRenderRow(FunRenderRowPath, caserenfunrow);   //暂时不用渲染线程
+                        //SaveRenderFun(RenFunPath, listRen);
+                    }
+                    else
+                        Debug.Log($"listFrame Count:{listFrame.Count}，allcaseFunRow Count:{allcaseFunRow.Count}");
                     #region SendMessageForSuccess
                     Debug.Log(AnalyzeType + "解析完成----");
                     if (RawPath.Contains('\\'))
