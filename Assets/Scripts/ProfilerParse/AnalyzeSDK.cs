@@ -218,7 +218,11 @@ namespace Analyze
                         //SaveRenderFun(RenFunPath, listRen);
                     }
                     else
-                        Debug.Log($"listFrame Count:{listFrame.Count}，allcaseFunRow Count:{allcaseFunRow.Count}");
+                    {
+                        string errorCount = $"listFrame Count:{listFrame.Count}，allcaseFunRow Count:{allcaseFunRow.Count}";
+                        Debug.Log(errorCount);
+                        throw new Exception(errorCount);
+                    }
                     #region SendMessageForSuccess
                     Debug.Log(AnalyzeType + "解析完成----");
                     if (RawPath.Contains('\\'))
