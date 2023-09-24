@@ -276,7 +276,7 @@ public class ParseFuntion
         //    return subre;
         //}
 
-        public SubData GetChildFunFast(ProfilerProperty profilerProperty, int actualFrame, ref Dictionary<string, string> funcnameReplace,ref List<string> funcPathstack,FunctionData now)
+        public SubData GetChildFunFast(ProfilerProperty profilerProperty, int actualFrame, ref Dictionary<string, string> funcnameReplace,ref List<string> funcPathstack,FunctionData now,ref Dictionary<string,string> casefunname)
         {
             string unknowFun = "UnknownFunction";
             SubData subda = new SubData();
@@ -289,9 +289,16 @@ public class ParseFuntion
             subda.calls = 0;
             subda.gcalloc = 0;
             stafun.Push(subda);
+            string trans = string.Empty;
             while (profilerProperty.Next(true))
             {
                 now.FStackData(actualFrame, profilerProperty, ref funcPathstack, ref funcnameReplace);
+                trans = now.FunctionPath;
+                trans = trans.Replace('/', ';');
+                if (!casefunname.ContainsKey(trans))
+                {
+                    casefunname.Add(trans, now.FunctionName);
+                }
                 if (now.FunctionName == "")
                 {
                     now.FunctionName = unknowFun;

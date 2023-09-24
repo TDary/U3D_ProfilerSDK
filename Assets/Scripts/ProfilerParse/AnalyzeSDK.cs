@@ -19,6 +19,7 @@ namespace Analyze
         string FunRowPath;
         //string FunRenderRowPath;
         string FunPath;
+        string FunNamePath;
         //string RenFunPath;
         string AnalyzeType;
         string ServerUrl;
@@ -44,6 +45,7 @@ namespace Analyze
             RawPath = comd.ContainsKey("-rawPath") ? comd["-rawPath"] : "";
             CsvPath = comd.ContainsKey("-csvPath") ? comd["-csvPath"] : "/csv";
             FunPath = comd.ContainsKey("-funPath") ? comd["-funPath"] : "/funbin";
+            FunNamePath = comd.ContainsKey("-funnamePath") ? comd["-funnamePath"] : "/funbin";
             FunRowPath = comd.ContainsKey("-funrowPath") ? comd["-funrowPath"] : "/funbin";
             //RenFunPath = comd.ContainsKey("-renfunPath") ? comd["-renfunPath"] : "/funbin";
             //FunRenderRowPath = comd.ContainsKey("-funrenderrowPath") ? comd["-funrenderrowPath"] : "/funbin";
@@ -64,6 +66,7 @@ namespace Analyze
             Debug.Log("RawPath:" + RawPath);
             Debug.Log("CvsPath:" + CsvPath);
             Debug.Log("FunPath:" + FunPath);
+            Debug.Log("FunNamePath:" + FunNamePath);
             Debug.Log("FunRowPath:" + FunRowPath);
             //Debug.Log("RenFunPath:" + RenFunPath);
             //Debug.Log("FunRenderRowPath:" + FunRenderRowPath);
@@ -158,6 +161,8 @@ namespace Analyze
             }
             else if (AnalyzeType == "funprofiler")
             {
+                Dictionary<string,string> caseFunName = new Dictionary<string, string>(5000);  //<path,funname>
+                List<string> allFunName = new List<string>(5000);
                 Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>(5000);
                 List<CaseFunRow> allcaseFunRow = new List<CaseFunRow>(5000);
                 //Dictionary<string, CaseRender> caserenfunrow = new Dictionary<string, CaseRender>(500);
@@ -187,7 +192,7 @@ namespace Analyze
                             continue;
                         #region 处理函数堆栈数据
                         CaseFlame cf = new CaseFlame();
-                        cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funcPathstack, now);
+                        cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funcPathstack, now,ref caseFunName);
                         listFrame.Add(cf);
                         ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame); //主线程堆栈统计数据
                         #endregion
@@ -210,12 +215,17 @@ namespace Analyze
                     {
                         allcaseFunRow.Add(item);
                     }
+                    foreach (var item in caseFunName.Keys)
+                    {
+                        allFunName.Add(item);
+                    }
                     #region SaveData
                     if (listFrame.Count != 0 && allcaseFunRow.Count != 0)
                     {
 
                         SaveFun(FunPath, listFrame);
                         SaveFunRow(FunRowPath, allcaseFunRow);
+                        SaveFunName(FunNamePath,allFunName);
                         //SaveRenderRow(FunRenderRowPath, caserenfunrow);   //暂时不用渲染线程
                         //SaveRenderFun(RenFunPath, listRen);
                     }
@@ -405,6 +415,43 @@ namespace Analyze
             using (MemoryStream stream = new MemoryStream())
             {
                 ProtoBuf.Serializer.Serialize(stream, csvdata);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                FileStream str = new FileStream(filePath, FileMode.Create);
+                str.Write(data, 0, data.Length);
+                stream.Close();
+                str.Close();
+            }
+        }
+        public void SaveFunName(string filePath, List<string> allfunNamePath)
+        {
+
+            if (filePath.Contains("\\"))
+            {
+                string newPath = filePath.Remove(filePath.LastIndexOf('\\'));
+                if (!Directory.Exists(newPath))
+                {
+                    System.IO.Directory.CreateDirectory(newPath);
+                }
+            }
+            //兼容Linux环境的路径
+            else if (filePath.Contains("/"))
+            {
+                string newPath = filePath.Remove(filePath.LastIndexOf('/'));
+                if (!Directory.Exists(newPath))
+                {
+                    System.IO.Directory.CreateDirectory(newPath);
+                }
+            }
+            else
+            {
+                throw new Exception("在文件路径中查找错误");
+            }
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                ProtoBuf.Serializer.Serialize(stream, allfunNamePath);
                 byte[] data = new byte[stream.Length];
                 stream.Position = 0;
                 stream.Read(data, 0, data.Length);
