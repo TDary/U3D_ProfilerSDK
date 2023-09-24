@@ -183,6 +183,8 @@ namespace Analyze
                         }
 
                         ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
+                        if (profilerProperty == null && profilerProperty.frameTime == "0")  //判断帧数据是否异常
+                            continue;
                         #region 处理函数堆栈数据
                         CaseFlame cf = new CaseFlame();
                         cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funcPathstack, now);
