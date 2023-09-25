@@ -1,4 +1,5 @@
-﻿using OProcessedData;
+﻿using Newtonsoft.Json;
+using OProcessedData;
 using OProfilerData;
 using System;
 using System.Collections.Generic;
@@ -56,12 +57,16 @@ public class ProfilerTest : EditorWindow
 
             #region 初始化容器
             ParsingToCsv parcsv = new ParsingToCsv();
+            Dictionary<string, string> caseFunName = new Dictionary<string, string>(5000);  //<path,funname>
+            List<string> allFunName = new List<string>(5000);
             Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>(5000);
+            List<CaseFunRow> allcaseFunRow = new List<CaseFunRow>(5000);
             Dictionary<string, CaseRender> caserenfunrow = new Dictionary<string, CaseRender>(500);
             int totalcount = lastIndex - firstIndex - 1;
             int rangeCount = totalcount;
             List<CaseFlame> listFrame = new List<CaseFlame>(totalcount);
             Dictionary<string,Simple> alldata = new Dictionary<string, Simple>(77);
+            List<Simple> simpledatas = new List<Simple>(totalcount);
             List<TimeLineFunData> listRen = new List<TimeLineFunData>();
             FunctionData now = new FunctionData();
             TimeLineData currentRen = new TimeLineData();
@@ -87,19 +92,19 @@ public class ProfilerTest : EditorWindow
                         continue;
                     }
                     ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
-                    if (!parcsv.GetSimpleData(profilerProperty, ref f, ref alldata,ref totalcount))
-                    {
-                        Debug.Log("跳过了一帧:" + f);
-                    }
-                    //#region 处理主线程函数堆栈数据
-                    //CaseFlame cf = new CaseFlame();
-                    //cf.frame_id = f;
-                    //cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funcPathstack, now);
-                    //listFrame.Add(cf);
-                    //ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame);
-                    //#endregion
-                    //funcnameReplace.Clear();
-                    //funcPathstack.Clear();
+                    //if (!parcsv.GetSimpleData(profilerProperty, ref f, ref alldata,ref totalcount))
+                    //{
+                    //    Debug.Log("跳过了一帧:" + f);
+                    //}
+                    #region 处理主线程函数堆栈数据
+                    CaseFlame cf = new CaseFlame();
+                    cf.frame_id = f;
+                    cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funcPathstack, now,ref caseFunName);
+                    listFrame.Add(cf);
+                    ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame);
+                    #endregion
+                    funcnameReplace.Clear();
+                    funcPathstack.Clear();
                     //#region 处理渲染线程数据
                     //ProfilerTool.GetProfilerFrameData(f, renderindex, ref profilerFrame);
                     //TimeLineFunData ren = new TimeLineFunData();
@@ -120,6 +125,14 @@ public class ProfilerTest : EditorWindow
                 //将trycatch提取出来
                 Debug.LogError(ex);
             }
+            foreach (var item in casefunrow.Values)
+            {
+                allcaseFunRow.Add(item);
+            }
+            foreach (var item in caseFunName.Keys)
+            {
+                allFunName.Add(item);
+            }
             string filePath = @"D:\000";
 
             if (!Directory.Exists(filePath))
@@ -129,7 +142,7 @@ public class ProfilerTest : EditorWindow
 
             string filename = "result.bin";
             string filename2 = "result2.bin";
-            var compressData = SerializerObj(alldata);
+            var compressData = SerializerObj(allFunName);
             //var compressData2 = SerializerObj(casefunrow);
             using (FileStream str = new FileStream(Path.Combine(filePath, filename), FileMode.Create))
             {
@@ -143,14 +156,16 @@ public class ProfilerTest : EditorWindow
         if (GUILayout.Button("反序列化测试"))
         {
             string path = "D:\\000\\result.bin";
+            string filepath = "D:\\000\\result.txt";
             FileStream stream = new FileStream(path, FileMode.Open);
-            Dictionary<string,Simple> originalData = ProtoBuf.Serializer.Deserialize<Dictionary<string, Simple>>(stream);
+            List<string> originalData = ProtoBuf.Serializer.Deserialize<List<string>>(stream);
+            //string res = JsonConvert.SerializeObject(originalData);
             stream.Close();
-            foreach (var item in originalData)
+            using (var sw = new StreamWriter(new FileStream(filepath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite), new System.Text.UTF8Encoding(false)))
             {
-                if(item.Value.values.Count!=298)
+                foreach(var item in originalData)
                 {
-                    Debug.Log(item.Key); ///
+                    sw.WriteLine($"{item} 10");
                 }
             }
         }
@@ -197,6 +212,26 @@ public class ProfilerTest : EditorWindow
         }
     }
 
+    public byte[] SerializerObj(List<string> info)
+    {
+        try
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                ProtoBuf.Serializer.Serialize(stream, info);
+                byte[] data = new byte[stream.Length];
+                stream.Position = 0;
+                stream.Read(data, 0, data.Length);
+                return data;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+            return null;
+        }
+    }
+
     public byte[] SerializerObj(List<TimeLineFunData> info)
     {
         try
@@ -217,7 +252,7 @@ public class ProfilerTest : EditorWindow
         }
     }
 
-    public byte[] SerializerObj(Dictionary<string,Simple> info)
+    public byte[] SerializerObj(List<Simple> info)
     {
         try
         {
@@ -257,7 +292,7 @@ public class ProfilerTest : EditorWindow
         }
     }
 
-    public byte[] SerializerObj(Dictionary<string,CaseFunRow> info)
+    public byte[] SerializerObj(List<CaseFunRow> info)
     {
         try
         {
