@@ -49,8 +49,24 @@ internal class Entrance : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError(e.ToString());
-            string ID = comd.ContainsKey("-ID") ? comd["-ID"] : "0";
-            Debug.Log("解析异常 上报----");
+            string ServerUrl = comd.ContainsKey("-ServerUrl") ? comd["-ServerUrl"] : "";
+            string UUID = comd.ContainsKey("-UUID") ? comd["-UUID"] : "";
+            string RawPath = comd.ContainsKey("-rawPath") ? comd["-rawPath"] : "";
+            string AnalyzeType = comd.ContainsKey("-analyzeType") ? comd["-analyzeType"] : "";
+            var data = RawPath.Split('/');
+            StringBuilder stringdata = new StringBuilder();
+            stringdata.Append("http://");
+            stringdata.Append(ServerUrl);
+            stringdata.Append("/stop?uuid=");
+            stringdata.Append(UUID);
+            stringdata.Append("&rawfile=");
+            stringdata.Append(data[data.Length - 1]);
+            stringdata.Append("&anaType=");
+            stringdata.Append(AnalyzeType);
+            stringdata.Append("&state=");
+            stringdata.Append("failed");
+            string Response = SHttpSender.SendGet(stringdata.ToString());
+            Debug.Log("解析异常上报----Response" + Response);
         }
 
     }
