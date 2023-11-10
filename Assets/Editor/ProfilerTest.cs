@@ -12,6 +12,8 @@ using UnityEditor.Profiling;
 using UnityEditorInternal;
 using UnityEngine;
 using static ParseFuntion;
+using ProfileMaRead;
+using ProfileMaRead.BinaryData;
 
 public class ProfilerTest : EditorWindow
 {
@@ -194,8 +196,59 @@ public class ProfilerTest : EditorWindow
             Debug.Log("测试值2：" + GenerateUniqueIdentifier(mainthread2).GetHashCode());
             Debug.Log("测试值3：" + hashTest2.GetHashCode());
         }
+        if (GUILayout.Button("试一下解析模式"))
+        {
+            Init();
+            string filepath = "E:\\memoryclient\\Build\\jijia.raw";
+            var res = AnalyzeTest(filepath);
+            Debug.Log(res.Count);
+        }
     }
 
+    public static void Init()
+    {
+        ProfilerLogUtil.logErrorException = (e) => {
+            //    Debug.LogError(e);
+        };
+        ProfilerLogUtil.logErrorString = (str) => {
+            //    Debug.LogError(str);
+        };
+    }
+    
+    private List<ProfileMaRead.BinaryData.ProfilerFrameData> AnalyzeTest(string filepath)
+    {
+        long currentPosition = 0L;
+        int f = 0;
+        List<ProfilerFrameData> result = new List<ProfilerFrameData>();
+        using (FileStream fileStream = File.OpenRead(filepath))
+        {
+            if (fileStream.Length == 0)
+            {
+                return null;
+            }
+            while (true)
+            {
+                ProfilerFrameBlockData profilerFrameBlockData = new ProfilerFrameBlockData();
+                fileStream.Position = currentPosition;
+                if (fileStream == null || fileStream.Position >= fileStream.Length)
+                    break;
+                bool flag = profilerFrameBlockData.Read((Stream)fileStream, f, Application.unityVersion);
+                if (flag)
+                    ++f;
+                currentPosition = fileStream.Position;
+                if (profilerFrameBlockData.frameData != null)
+                {
+                    profilerFrameBlockData.frameData.ApplyCountersToDeplicatedStats();
+                    //逻辑处理，去掉最后一帧的数据
+                    result.Add(profilerFrameBlockData.frameData);
+                }
+            }
+            fileStream.Close();
+        }
+    
+        return result;
+    }
+    
     public string GenerateUniqueIdentifier(string input)
     {
         using (SHA256 sha256 = SHA256.Create())
