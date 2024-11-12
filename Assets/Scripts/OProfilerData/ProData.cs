@@ -168,10 +168,10 @@ namespace OProfilerData
 
         public double TotalTime_ms;
         public double SelfTime_ms;
-        //public string DrawCalls;
-        //public string TotalGPUTime_ms;
+        public string DrawCalls;
+        public string TotalGPUPercent;
+        public string TotalGPUTime_ms;
         //public string SelfGPUTime_ms;
-        //public string TotalGPUPercent;
         //public string SelfGPUPercent;
         //public double WarningCount;
         //public string ObjectName;
@@ -196,6 +196,9 @@ namespace OProfilerData
             this.GCMemory_KB = ToDouble(profilerProperty.GetColumn(HierarchyFrameDataView.columnGcMemory));
             this.TotalTime_ms = ToDouble(profilerProperty.GetColumn(HierarchyFrameDataView.columnTotalTime));
             this.SelfTime_ms = ToDouble(profilerProperty.GetColumn(HierarchyFrameDataView.columnSelfTime));
+            this.DrawCalls = profilerProperty.GetColumn(7);
+            this.TotalGPUTime_ms = profilerProperty.GetColumn(8);
+            this.TotalGPUPercent = profilerProperty.GetColumn(10);
             //this.DrawCalls = profilerProperty.GetColumn(7);
             //this.TotalGPUTime_ms = profilerProperty.GetColumn(8);
             //this.SelfGPUTime_ms = profilerProperty.GetColumn(9);

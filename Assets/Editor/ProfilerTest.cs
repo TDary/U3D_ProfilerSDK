@@ -14,6 +14,7 @@ using UnityEngine;
 using static ParseFuntion;
 using ProfileMaRead;
 using ProfileMaRead.BinaryData;
+using UnityEngine.Profiling;
 
 public class ProfilerTest : EditorWindow
 {
@@ -202,6 +203,35 @@ public class ProfilerTest : EditorWindow
             string filepath = "E:\\memoryclient\\Build\\jijia.raw";
             var res = AnalyzeTest(filepath);
             Debug.Log(res.Count);
+        }
+        if (GUILayout.Button("GPUData_Analyze"))
+        {
+            int TestFrameIndex = 91;
+            ProfilerProperty profilerProperty = new ProfilerProperty();
+            ProfilerTool.GetProfilerProperty(TestFrameIndex, ref profilerProperty);
+            //string TestFunName = "";
+            //TestFunName = profilerProperty.GetColumn(HierarchyFrameDataView.columnName);
+            //Debug.Log("测试：" + TestFunName);
+
+            while (profilerProperty.Next(true))
+            {
+                string funname = profilerProperty.GetColumn(HierarchyFrameDataView.columnName).Replace("\n", "");
+
+                if (funname.Equals("[KEngine] LateUpdate"))
+                {
+                    string FunctionPath = profilerProperty.propertyPath.Replace("\n", "");
+                    string FunctionName = profilerProperty.GetColumn(HierarchyFrameDataView.columnName).Replace("\n", "");
+                    float DrawCalls = profilerProperty.GetColumnAsSingle(7);
+                    string TotalGPUPersent = profilerProperty.GetColumn(10);
+                    float TotalTime_ms = profilerProperty.GetColumnAsSingle(8);
+                    Debug.Log("FunName: " + FunctionName);
+                    Debug.Log("FunPath: " + FunctionPath);
+                    Debug.Log("TotalPersent: " + TotalGPUPersent);
+                    Debug.Log("DrawCalls: " + DrawCalls);
+                    Debug.Log("GPUTime: " + TotalTime_ms);
+                    break;
+                }
+            }
         }
     }
 
