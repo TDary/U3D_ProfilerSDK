@@ -175,12 +175,23 @@ public class ProfilerTest : EditorWindow
         if (GUILayout.Button("测试新接口"))
         {
             ProfilerFrameDataIterator profilerFrameDataIterator = new ProfilerFrameDataIterator();
-            profilerFrameDataIterator.SetRoot(1, 1);
+            profilerFrameDataIterator.SetRoot(1, 0);
+            string threadname = profilerFrameDataIterator.GetThreadName();
+            Debug.Log("ThreadName:" + threadname);
+            Debug.Log("TotalTime:" + profilerFrameDataIterator.durationMS);
+            FrameDataView frameDataView = ProfilerDriver.GetRawFrameDataView(1,0);
             while (profilerFrameDataIterator.Next(true))
             {
-                string threadname = profilerFrameDataIterator.name;
-                profilerFrameDataIterator.GetFrameStartS(1);
-                //Debug.Log("FunName:" + pro.GetColumn(HierarchyFrameDataView.columnName).Replace("\n", ""));
+                Debug.Log("FunName:" + profilerFrameDataIterator.name);
+                Debug.Log("FunPath:" + profilerFrameDataIterator.path);
+                Debug.Log("FunTime:"+ profilerFrameDataIterator.durationMS);
+                int instId = profilerFrameDataIterator.instanceId;
+                FrameDataView.UnityObjectInfo outobjectInfo;
+                frameDataView.GetUnityObjectInfo(instId, out outobjectInfo);
+                if (outobjectInfo.name != null)
+                {
+                    Debug.Log("UnityObjectName:" + outobjectInfo.name);
+                }
             }
             profilerFrameDataIterator.Dispose();
         }
