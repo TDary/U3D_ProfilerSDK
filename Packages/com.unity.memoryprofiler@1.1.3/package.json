@@ -1,0 +1,37 @@
+{
+  "name": "com.unity.memoryprofiler",
+  "displayName": "Memory Profiler",
+  "version": "1.1.3",
+  "unity": "2022.3",
+  "description": "The Memory Profiler offers a unified solution allowing you to profile both small projects on mobile devices and big AAA projects on high end machines. It provides actionable information about allocations in the engine to allow developers to manage and reduce memory usage.",
+  "keywords": [
+    "profiler",
+    "memory",
+    "memoryprofiler",
+    "snapshot",
+    "profiling",
+    "tool"
+  ],
+  "dependencies": {
+    "com.unity.editorcoroutines": "1.0.0",
+    "com.unity.collections": "1.2.3",
+    "com.unity.mathematics": "1.2.1",
+    "com.unity.burst": "1.8.0",
+    "com.unity.profiling.core": "1.0.0"
+  },
+  "relatedPackages": {
+    "com.unity.memoryprofiler.tests": "1.1.3"
+  },
+  "_upm": {
+    "changelog": "### Fixed\n- Static field references were only listed in the References view if they directly referenced the selected item, i.e. a static field referencing an object B that referenced the selected object A would only show object B, but not the static reference to B.\n- Fixed an ArgumentOutOfRangeException when opening the Unity Objects page in compare mode with 2 snapshots that were captured without capturing Native Objects.\n- Fixed a NullReferenceException when opening the All of Memory page in compare mode with 2 snapshots that were captured without capturing Native Objects but with Native Allocations, both from the same session.\n- Fixed the ID numbers for Graphics objects on the All of Memory page in compare mode with 2 snapshots that where both captured from the same session to be their Native Object's instance ID.\n\n### Changed\n- Adjusted package dependency on Unity.Collections down to 1.2 to retain compatibility to 2022.3 without forcing to update Unity.Collections to 2.1 or newer."
+  },
+  "upmCi": {
+    "footprint": "2d362d1e61487a27f79f91638c32ac376e000329"
+  },
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.memoryprofiler@1.1/manual/index.html",
+  "repository": {
+    "url": "https://github.cds.internal.unity3d.com/unity/com.unity.memoryprofiler.git",
+    "type": "git",
+    "revision": "665fdc45eb1a78e98b75abd890dfe3447482434f"
+  }
+}

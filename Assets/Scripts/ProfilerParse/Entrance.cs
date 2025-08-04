@@ -1,9 +1,7 @@
 ﻿using Analyze;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 internal class Entrance : MonoBehaviour
@@ -18,24 +16,6 @@ internal class Entrance : MonoBehaviour
     void Update()
     {
 
-    }
-
-    static Dictionary<string, string> GetInputCommand(string[] args)
-    {
-        Dictionary<string, string> result = new Dictionary<string, string>();
-        string key = string.Empty;
-        foreach (var item in args)
-        {
-            if (item.StartsWith("-"))
-            {
-                key = item.Trim();
-            }
-            else if (!string.IsNullOrEmpty(item) && !string.IsNullOrEmpty(key) && !result.ContainsKey(key))
-            {
-                result.Add(key, item.Trim());
-            }
-        }
-        return result;
     }
 
     public static void EntranceParseBegin()
@@ -67,11 +47,11 @@ internal class Entrance : MonoBehaviour
             stringdata.Append("failed");
             string Response = SHttpSender.SendGet(stringdata.ToString());
             Debug.Log("解析异常上报----Response" + Response);
+            //Todo:写一个失败的文件，不使用http消息作为基准了
         }
-
     }
 
-    public static void EntranceGetMemory()
+    public static void EntranceGetSimpleMemory()
     {
         Dictionary<string, string> comd = GetInputCommand(System.Environment.GetCommandLineArgs());
         string get_ip = string.Empty;
@@ -91,5 +71,37 @@ internal class Entrance : MonoBehaviour
             string ID = comd.ContainsKey("-ID") ? comd["-ID"] : "0";
             Debug.Log("异常 上报----");
         }
+    }
+
+    public static void EntranceParseSnapBegin()
+    {
+        Dictionary<string, string> comd = GetInputCommand(System.Environment.GetCommandLineArgs());
+        try
+        {
+            SnapSDK.Instance().start(comd);
+        }
+        catch (Exception ex){
+            //todo:写失败的异常文件
+            Debug.LogError(ex.ToString());
+            Debug.Log("异常 上报----");
+        }
+    }
+
+    static Dictionary<string, string> GetInputCommand(string[] args)
+    {
+        Dictionary<string, string> result = new Dictionary<string, string>();
+        string key = string.Empty;
+        foreach (var item in args)
+        {
+            if (item.StartsWith("-"))
+            {
+                key = item.Trim();
+            }
+            else if (!string.IsNullOrEmpty(item) && !string.IsNullOrEmpty(key) && !result.ContainsKey(key))
+            {
+                result.Add(key, item.Trim());
+            }
+        }
+        return result;
     }
 }
