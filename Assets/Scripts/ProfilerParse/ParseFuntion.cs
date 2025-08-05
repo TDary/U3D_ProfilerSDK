@@ -1,8 +1,7 @@
 ﻿using OProfilerData;
-using System;
 using System.Collections.Generic;
+using UnityEditor.Profiling;
 using UnityEditorInternal;
-using UnityEngine;
 
 public class ParseFuntion
 {
@@ -24,7 +23,7 @@ public class ParseFuntion
         private int MaxDeepF = 10;
         //TODO:优化结构，有bug，重复性的函数会产生bug
 
-        public TimeLineFunData GetRenFunFast(TimeLineData now, ProfilerFrameDataIterator profilerFrameDataIterator, int actualFrame, int threadIndex, ref Dictionary<string, string> funcnameReplace, ref List<string> funcPathstack)
+        public TimeLineFunData GetRenFunFast(TimeLineData now, ProfilerFrameDataIterator profilerFrameDataIterator, int actualFrame, int threadIndex, ref Dictionary<string, string> funcnameReplace, ref List<string> funcPathstack, FrameDataView framedataview)
         {
             string unknowFun = "UnknownFunction";
             TimeLineFunData subre = new TimeLineFunData();
@@ -35,7 +34,7 @@ public class ParseFuntion
             stactime.Push(subre);
             while (profilerFrameDataIterator.Next(true))
             {
-                now.TimeData(actualFrame, profilerFrameDataIterator, threadIndex, ref funcnameReplace, ref funcPathstack);
+                now.TimeData(actualFrame, profilerFrameDataIterator, threadIndex, ref funcnameReplace, ref funcPathstack,framedataview);
                 if (now.functionName == "")
                 {
                     now.functionName = unknowFun;

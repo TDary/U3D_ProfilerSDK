@@ -340,6 +340,7 @@ namespace OProfilerData
 
         public string functionPath;
         public string functionName;
+        public string bltoUnityObject;
         public string threadName;
         public string groupName;
         public float funcStartTime_ms;
@@ -355,11 +356,18 @@ namespace OProfilerData
 
         public static System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 
-        public void TimeData(int frame, ProfilerFrameDataIterator profilerFrameDataIterator, int threadID, ref Dictionary<string, string> funcnameReplace, ref List<string> funcPathstack)
+        public void TimeData(int frame, ProfilerFrameDataIterator profilerFrameDataIterator, int threadID, ref Dictionary<string, string> funcnameReplace, ref List<string> funcPathstack, FrameDataView framedataview)
         {
             this.frame = frame;
             this.functionPath = profilerFrameDataIterator.path;
             this.functionName = profilerFrameDataIterator.name;
+            FrameDataView.UnityObjectInfo outobjectInfo;
+            int insid = profilerFrameDataIterator.instanceId;
+            framedataview.GetUnityObjectInfo(insid, out outobjectInfo);
+            if (outobjectInfo.name != null)
+            {
+                this.bltoUnityObject = outobjectInfo.name;
+            }
             this.threadName = profilerFrameDataIterator.GetThreadName();
 #if (UNITY_5_3 || UNITY_5_3_OR_NEWER)
             this.groupName = profilerFrameDataIterator.GetGroupName();
