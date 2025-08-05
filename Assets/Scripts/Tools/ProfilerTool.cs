@@ -211,14 +211,14 @@ public class ProfilerTool
     /// <param name="actualFrame"></param>
     /// <param name="dataFrame"></param>
     /// <returns></returns>
-    public static void ExtractTimeLineData(ProfilerFrameDataIterator profilerFrameDataIterator, int actualFrame, int threadIndex, ref Dictionary<string, string> funcnameReplace, ref List<TimeLineData> timeLineDatas, ref List<string> funcPathstack)
+    public static void ExtractTimeLineData(ProfilerFrameDataIterator profilerFrameDataIterator, int actualFrame, int threadIndex, ref Dictionary<string, string> funcnameReplace, ref List<TimeLineData> timeLineDatas, ref List<string> funcPathstack,FrameDataView framedataview)
     {
         while (profilerFrameDataIterator.Next(true))
         {
             try
             {
                 TimeLineData timeLineData = new TimeLineData();
-                timeLineData.TimeData(actualFrame, profilerFrameDataIterator, threadIndex, ref funcnameReplace, ref funcPathstack);
+                timeLineData.TimeData(actualFrame, profilerFrameDataIterator, threadIndex, ref funcnameReplace, ref funcPathstack, framedataview);
                 timeLineDatas.Add(timeLineData);
             }
             catch (Exception ex)
