@@ -101,7 +101,7 @@ namespace Analyze
                     {
                         continue;
                     }
-                    ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
+                    ProfilerTool.GetProfilerProperty(f, mainthreadindex,ref profilerProperty);
                     if (!parcsv.GetSimpleData(profilerProperty, ref f, ref alldata, ref totalCount))
                     {
                         Debug.Log("跳过了一帧:" + f);
@@ -139,6 +139,7 @@ namespace Analyze
             else if (AnalyzeType == "funprofiler")
             {
                 Dictionary<string,string> caseFunName = new Dictionary<string, string>(5000);  //<path,funname>
+                Dictionary<string, string> funcObjectDic = new Dictionary<string, string>(2000);  // 用于获取函数所属的Unityobject
                 List<string> allFunName = new List<string>(5000);
                 Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>(5000);
                 List<CaseFunRow> allcaseFunRow = new List<CaseFunRow>(5000);
@@ -162,14 +163,17 @@ namespace Analyze
                         continue;
                     }
 
-                    ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
+                    ProfilerTool.GetProfilerProperty(f, mainthreadindex,ref profilerProperty);
                     if (profilerProperty == null && profilerProperty.frameTime == "0")  //判断帧数据是否异常
                         continue;
+                    #region 处理Unityobject对象
+                    GetFunUnityObjectData(ref funcObjectDic,f, mainthreadindex);
+                    #endregion
                     #region 处理函数堆栈数据
                     CaseFlame cf = new CaseFlame();
                     cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funcPathstack, now,ref caseFunName);
                     listFrame.Add(cf);
-                    ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame); //主线程堆栈统计数据
+                    ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame, funcObjectDic); //主线程堆栈统计数据
                     #endregion
                     //funcnameReplace.Clear();
                     //funcPathstack.Clear();
@@ -233,30 +237,6 @@ namespace Analyze
                 #endregion
                 #endregion
                 #endregion
-            }
-            else if(AnalyzeType == "funtimeline")
-            {
-                Dictionary<string, CaseRender> caserenfunrow = new Dictionary<string, CaseRender>(500);
-                TimeLineData currentRen = new TimeLineData();
-                List<TimeLineFunData> listRen = new List<TimeLineFunData>();
-                ProfilerFrameDataIterator profilerFrame = new ProfilerFrameDataIterator();
-                ProfilerTrees prt = new ProfilerTrees();
-                prt.shieldSwitch = shieldSwitch;
-                Dictionary<string, string> funcnameReplace = new Dictionary<string, string>(50);
-                List<string> funcPathstack = new List<string>(50);
-                for (int f = firstIndex; f < lastIndex; f++)
-                {
-                    if (f == firstIndex)
-                    {
-                        continue;
-                    }
-                    FrameDataView frameDataView = ProfilerDriver.GetRawFrameDataView(f, mainthreadindex);
-                    ProfilerTool.GetProfilerFrameData(f, mainthreadindex, ref profilerFrame);
-                    TimeLineFunData ren = new TimeLineFunData();
-                    ren = prt.GetRenFunFast(currentRen, profilerFrame, f, mainthreadindex, ref funcnameReplace, ref funcPathstack, frameDataView);
-                    listRen.Add(ren);
-                    ParseFun.GetParsedTimelineRowjson(f, ref caserenfunrow, prt, ren); //Timeline线程统计数据
-                }
             }
             else //deep
             {
@@ -362,8 +342,30 @@ namespace Analyze
             #endregion
         }
 
+        void GetFunUnityObjectData(ref Dictionary<string,string> Dict,int frameindex,int threadindex)
+        {
+            ProfilerFrameDataIterator profilerFrameDataIterator = new ProfilerFrameDataIterator();
+            profilerFrameDataIterator.SetRoot(frameindex, threadindex);
+            FrameDataView frameDataView = ProfilerDriver.GetRawFrameDataView(frameindex, threadindex);
+            while (profilerFrameDataIterator.Next(true))
+            {
+                int instId = profilerFrameDataIterator.instanceId;
+                FrameDataView.UnityObjectInfo outobjectInfo;
+                frameDataView.GetUnityObjectInfo(instId, out outobjectInfo);
+
+                if (!Dict.ContainsKey(profilerFrameDataIterator.name))
+                {
+                    if(outobjectInfo.name!=null)
+                        Dict.Add(profilerFrameDataIterator.name, outobjectInfo.name);
+                    else
+                        Dict.Add(profilerFrameDataIterator.name, "no object");
+                }
+                    
+            }
+        }
+
         #region 保存文件
-        public void SaveCsv(string filePath,List<Simple> csvdata)
+        void SaveCsv(string filePath,List<Simple> csvdata)
         {
             if (filePath.Contains("\\"))
             {
@@ -399,7 +401,7 @@ namespace Analyze
                 str.Close();
             }
         }
-        public void SaveFunName(string filePath, List<string> allfunNamePath)
+        void SaveFunName(string filePath, List<string> allfunNamePath)
         {
 
             if (filePath.Contains("\\"))
@@ -436,7 +438,7 @@ namespace Analyze
                 str.Close();
             }
         }
-        public void SaveFun(string filePath, List<CaseFlame> listFrame)
+        void SaveFun(string filePath, List<CaseFlame> listFrame)
         {
             if (filePath.Contains("\\"))
             {
@@ -509,7 +511,7 @@ namespace Analyze
             }
         }
 
-        public void SaveRenderFun(string filePath, List<TimeLineFunData> allrenderFun)
+        void SaveRenderFun(string filePath, List<TimeLineFunData> allrenderFun)
         {
             if (filePath.Contains("\\"))
             {
@@ -545,7 +547,7 @@ namespace Analyze
             }
         }
 
-        public void SaveRenderRow(string filePath, Dictionary<string, CaseRender> allcasefunrow)
+        void SaveRenderRow(string filePath, Dictionary<string, CaseRender> allcasefunrow)
         {
             if (filePath.Contains("\\"))
             {

@@ -240,10 +240,10 @@ public class ProfilerTool
         Thread.Sleep(1);
     }
 
-    public static void GetProfilerProperty(int frame, ref ProfilerProperty profilerProperty)
+    public static void GetProfilerProperty(int frame, int threadindex,ref ProfilerProperty profilerProperty)
     {
 #if UNITY_2019_1_OR_NEWER
-        profilerProperty.SetRoot(frame, HierarchyFrameDataView.columnSelfTime, 0);
+        profilerProperty.SetRoot(frame, HierarchyFrameDataView.columnSelfTime, threadindex);
 #else
         profilerProperty.SetRoot(frame, ProfilerColumn.SelfTime, ProfilerViewType.Hierarchy);
 #endif

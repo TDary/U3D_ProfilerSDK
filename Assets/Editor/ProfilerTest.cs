@@ -18,6 +18,67 @@ using UnityEngine.Profiling;
 
 public class ProfilerTest : EditorWindow
 {
+    [Serializable]
+    class SpeedCope
+    {
+        public string exporter;
+        [JsonProperty("$schema")]
+        public string schemea;
+        public string name;
+        public int activeProfileIndex;
+        public List<ProfilesStruct> profiles;
+        public SharedStruct shared;
+        public SpeedCope(string exporter, string schemea,string name, int activeProfileIndex, List<ProfilesStruct> profiles, SharedStruct shared)
+        {
+            this.exporter = exporter;
+            this.schemea = schemea;
+            this.name = name;
+            this.activeProfileIndex = activeProfileIndex;
+            this.profiles = profiles;
+            this.shared = shared;
+        }
+    }
+
+    [Serializable]
+    class FunctionItem
+    {
+        public string name;
+        public string file;
+        public string line;
+    }
+
+    [Serializable]
+    class SharedStruct
+    {
+        public List<FunctionItem> frames;
+        public SharedStruct(List<FunctionItem> frames)
+        {
+            this.frames = frames;
+        }
+    }
+
+    [Serializable]
+    class ProfilesStruct
+    {
+        public string type;
+        public string name;
+        public string unit;
+        public float startValue;
+        public float endValue;
+        public List<List<int>> samples;
+        public List<float> weights;
+        public ProfilesStruct(string type, string name, string unit, float startValue, float endValue, List<List<int>> samp,List<float> weight)
+        {
+            this.type = type;
+            this.name = name;
+            this.unit = unit;
+            this.startValue = startValue;
+            this.endValue = endValue;
+            this.samples = samp;
+            this.weights = weight;
+        }
+    }
+
     private static ProfilerTest Instance;
     int frame = -1;
     void Start()
@@ -60,6 +121,7 @@ public class ProfilerTest : EditorWindow
 
             #region 初始化容器
             ParsingToCsv parcsv = new ParsingToCsv();
+            Dictionary<string, string> funUnityIndex = new Dictionary<string, string>();
             Dictionary<string, string> caseFunName = new Dictionary<string, string>(5000);  //<path,funname>
             List<string> allFunName = new List<string>(5000);
             Dictionary<string, CaseFunRow> casefunrow = new Dictionary<string, CaseFunRow>(5000);
@@ -94,7 +156,7 @@ public class ProfilerTest : EditorWindow
                     {
                         continue;
                     }
-                    ProfilerTool.GetProfilerProperty(f, ref profilerProperty);
+                    ProfilerTool.GetProfilerProperty(f, 0,ref profilerProperty);
                     //if (!parcsv.GetSimpleData(profilerProperty, ref f, ref alldata,ref totalcount))
                     //{
                     //    Debug.Log("跳过了一帧:" + f);
@@ -104,7 +166,7 @@ public class ProfilerTest : EditorWindow
                     cf.frame_id = f;
                     cf.flame = prt.GetChildFunFast(profilerProperty, f, ref funcnameReplace, ref funcPathstack, now,ref caseFunName);
                     listFrame.Add(cf);
-                    ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame);
+                    ParseFun.GetParsedFunRowjson(f, ref casefunrow, prt, cf.flame, funUnityIndex);
                     #endregion
                     funcnameReplace.Clear();
                     funcPathstack.Clear();
@@ -174,26 +236,98 @@ public class ProfilerTest : EditorWindow
         }
         if (GUILayout.Button("测试新接口"))
         {
+            Dictionary<string,int> funnameIndexs = new Dictionary<string, int>();
             ProfilerFrameDataIterator profilerFrameDataIterator = new ProfilerFrameDataIterator();
+            List<FunctionItem> functionItems = new List<FunctionItem>();
+            List<List<int>> samplesindex = new List<List<int>>();
+            List<float> allweights = new List<float>();
             profilerFrameDataIterator.SetRoot(1, 0);
             string threadname = profilerFrameDataIterator.GetThreadName();
             Debug.Log("ThreadName:" + threadname);
             Debug.Log("TotalTime:" + profilerFrameDataIterator.durationMS);
             FrameDataView frameDataView = ProfilerDriver.GetRawFrameDataView(1,0);
+            float startValue = 0;
+            float endValue = 0;
+            float totalValue = 0;
             while (profilerFrameDataIterator.Next(true))
             {
-                Debug.Log("FunName:" + profilerFrameDataIterator.name);
-                Debug.Log("FunPath:" + profilerFrameDataIterator.path);
-                Debug.Log("FunTime:"+ profilerFrameDataIterator.durationMS);
-                int instId = profilerFrameDataIterator.instanceId;
-                FrameDataView.UnityObjectInfo outobjectInfo;
-                frameDataView.GetUnityObjectInfo(instId, out outobjectInfo);
-                if (outobjectInfo.name != null)
+                // 特殊处理一些函数名带"/"的
+                string funname = "";
+                string funPath = "";
+                if (profilerFrameDataIterator.name.Contains("/"))
                 {
-                    Debug.Log("UnityObjectName:" + outobjectInfo.name);
+                    funname = funname.Replace("/", "_");
+                    funPath = profilerFrameDataIterator.path.Replace(profilerFrameDataIterator.name, funname);
+                }
+                else
+                {
+                    funname = profilerFrameDataIterator.name;
+                    funPath = profilerFrameDataIterator.path;
+                }
+                // 赋值起始时间戳
+                if (startValue==0 && endValue == 0 )
+                {
+                    if (profilerFrameDataIterator.name.Equals("PlayerLoop"))
+                    {
+                        startValue = profilerFrameDataIterator.startTimeMS;
+                        totalValue = profilerFrameDataIterator.durationMS + startValue;
+                        endValue = totalValue + 1;
+                    }
+                }
+                // 填充数据
+                if (!funnameIndexs.ContainsKey(funname))
+                {
+                    FunctionItem funcitem = new FunctionItem();
+                    funcitem.name = profilerFrameDataIterator.name;
+                    funcitem.file = "UnityObject";
+                    int instId = profilerFrameDataIterator.instanceId;
+                    FrameDataView.UnityObjectInfo outobjectInfo;
+                    frameDataView.GetUnityObjectInfo(instId, out outobjectInfo);
+                    if (outobjectInfo.name != null)
+                        funcitem.line = outobjectInfo.name;
+                    else
+                        funcitem.line = "";
+                    functionItems.Add(funcitem);
+                    funnameIndexs.Add(funname, functionItems.Count - 1);
+                    List<int> sampleItem = new List<int>();
+                    FindFunStackPath(ref sampleItem, funPath, funnameIndexs, threadname);
+                    samplesindex.Add(sampleItem);
+                    allweights.Add(profilerFrameDataIterator.durationMS);
+                }
+                else
+                {
+                    List<int> sampleItem = new List<int>();
+                    FindFunStackPath(ref sampleItem, funPath, funnameIndexs, threadname);
+                    samplesindex.Add(sampleItem);
+                    allweights.Add(profilerFrameDataIterator.durationMS);
                 }
             }
             profilerFrameDataIterator.Dispose();
+            // 写入文件导出数据
+            ProfilesStruct profilesStruct = new ProfilesStruct("sampled", "MainThread", "milliseconds", startValue, endValue, samplesindex, allweights);
+            List<ProfilesStruct> allprofilesStruct = new List<ProfilesStruct>();
+            allprofilesStruct.Add(profilesStruct);
+            SharedStruct sharedStruct = new SharedStruct(functionItems);
+            SpeedCope speedcope = new SpeedCope("testuuid-frome", "https://www.speedscope.app/file-format-schema.json", "FunSpeedScope", 0, allprofilesStruct, sharedStruct);
+            string jsonData = JsonConvert.SerializeObject(speedcope, Formatting.Indented);
+            File.WriteAllText("D:/speedcopeTest.json", jsonData);
+        }
+        if (GUILayout.Button("测试一下获取selftime"))
+        {
+            int frameIndex = 1;
+            ProfilerProperty profilerProperty = new ProfilerProperty();
+            profilerProperty.SetRoot(frameIndex, HierarchyFrameDataView.columnSelfTime, 0);
+            //RawFrameDataView rawFrameDataView = ProfilerDriver.GetRawFrameDataView(frameIndex, 0);
+            while (profilerProperty.Next(true))
+            {
+                string FunctionPath = profilerProperty.propertyPath.Replace("\n", "");
+                string FunctionName = profilerProperty.GetColumn(HierarchyFrameDataView.columnName).Replace("\n", "");
+                string SelfTime_ms = profilerProperty.GetColumn(HierarchyFrameDataView.columnSelfTime);
+                Debug.Log("FunName: " + FunctionName);
+                Debug.Log("FunPath: " + FunctionPath);
+                Debug.Log("SelfTime: " + SelfTime_ms);
+            }
+            profilerProperty.Dispose();
         }
         if (GUILayout.Button("转换hash值测试"))
         {
@@ -219,7 +353,7 @@ public class ProfilerTest : EditorWindow
         {
             int TestFrameIndex = 91;
             ProfilerProperty profilerProperty = new ProfilerProperty();
-            ProfilerTool.GetProfilerProperty(TestFrameIndex, ref profilerProperty);
+            ProfilerTool.GetProfilerProperty(TestFrameIndex,0, ref profilerProperty);
             //string TestFunName = "";
             //TestFunName = profilerProperty.GetColumn(HierarchyFrameDataView.columnName);
             //Debug.Log("测试：" + TestFunName);
@@ -241,6 +375,33 @@ public class ProfilerTest : EditorWindow
                     Debug.Log("DrawCalls: " + DrawCalls);
                     Debug.Log("GPUTime: " + TotalTime_ms);
                     break;
+                }
+            }
+        }
+    }
+
+    public void FindFunStackPath(ref List<int> sampleItem,string infoPath, Dictionary<string,int> funcIndex,string threadName)
+    {
+        // 先去除线程函数名对应一部分
+        string removedString = infoPath.Replace(threadName+"/", "");
+        if (string.IsNullOrEmpty(removedString))
+            Debug.LogError($"传入的函数路径有误:{infoPath}");
+        if(!removedString.Contains("/"))   //线程下的第一个
+            sampleItem.Add(0);
+        else
+        {
+            string[] pathParts = removedString.Split('/');
+            for (int i = 0; i < pathParts.Length; i++)
+            {
+                string part = pathParts[i].Trim();
+                if (funcIndex.TryGetValue(part, out int index))
+                {
+                    sampleItem.Add(index);
+                }
+                else
+                {
+                    // 如果没有找到对应的函数名，可以选择添加一个默认值或处理逻辑
+                    Debug.LogError($"Function name '{part}' not found in the index dictionary.");
                 }
             }
         }
