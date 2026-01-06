@@ -150,10 +150,24 @@ namespace Unity.MemoryProfiler.Editor
         List<TreeViewItemData<AllTrackedMemoryModel.ItemData>> stackDatas;
         static int RefMaxDepth = 5;   //最大引用深度
         static int ManagedThreadCount = 4;
-        public string BuildSummaryData()
+
+        public void BuildAllData(string SummaryJsonPath, string UnityObjectJsonPath, string AllMemoryJsonPath)
         {
+            // Summary
+            StreamWriter SummaryWs = new StreamWriter(SummaryJsonPath, true, System.Text.Encoding.UTF8);
+            SummaryWs.Write("[");
+            // UnityObjects
+            var uofs = new FileStream(UnityObjectJsonPath, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 716800);
+            StreamWriter uosw = new StreamWriter(uofs, System.Text.Encoding.UTF8, bufferSize: 358400);
+            uosw.Write("[");
+            // AllMemory
+            var almfs = new FileStream(AllMemoryJsonPath, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 716800);
+            StreamWriter alsw = new StreamWriter(almfs, System.Text.Encoding.UTF8, bufferSize: 358400);
+            alsw.Write("[");
             try
             {
+                #region SummaryDataBuild
+                //SummryData Build
                 m_SummaryModelBuilder = new AllMemorySummaryModelBuilder(m_SnapshotDataService.Base, null);
                 m_ManagedMemoryModelBuilder = new ManagedMemorySummaryModelBuilder(m_SnapshotDataService.Base, null);
                 m_UnityObjectsModelBuilder = new UnityObjectsMemorySummaryModelBuilder(m_SnapshotDataService.Base, null);
@@ -162,74 +176,9 @@ namespace Unity.MemoryProfiler.Editor
                 MemorySummaryModel managedDataModel = m_ManagedMemoryModelBuilder.Build();  //Summary里的
                 MemorySummaryModel unityobjModel = m_UnityObjectsModelBuilder.Build();  //Summary里的
                 MemorySummaryModel residentModel = m_ResidentModelBuilder.Build();
-                List<SummaryDataClass> result = new List<SummaryDataClass>(30);
-                SummaryDataClass amd = new SummaryDataClass();   //Allocated Memory Distribution
-                amd.GroupName = summaryModel.Title;
-                amd.ItemName = "";
-                amd.AllocatedSize = summaryModel.TotalA;
-                result.Add(amd);
-                foreach (var row in summaryModel.Rows)
-                {
-                    SummaryDataClass sc = new SummaryDataClass();
-                    sc.GroupName = summaryModel.Title;
-                    sc.ItemName = row.Name;
-                    sc.AllocatedSize = row.BaseSize.Committed;
-                    result.Add(sc);
-                }
-
-                SummaryDataClass managedHeap = new SummaryDataClass();   //Managed Heap Utilization
-                managedHeap.GroupName = managedDataModel.Title;
-                managedHeap.ItemName = "";
-                managedHeap.AllocatedSize = managedDataModel.TotalA;
-                result.Add(managedHeap);
-                foreach (var row in managedDataModel.Rows)
-                {
-                    SummaryDataClass sc = new SummaryDataClass();
-                    sc.GroupName = managedDataModel.Title;
-                    sc.ItemName = row.Name;
-                    sc.AllocatedSize = row.BaseSize.Committed;
-                    result.Add(sc);
-                }
-
-                SummaryDataClass TopunityData = new SummaryDataClass();   //Top Unity Objects Categories
-                TopunityData.GroupName = unityobjModel.Title;
-                TopunityData.ItemName = "";
-                TopunityData.AllocatedSize = unityobjModel.TotalA;
-                result.Add(TopunityData);
-                foreach (var row in unityobjModel.Rows)
-                {
-                    SummaryDataClass sc = new SummaryDataClass();
-                    sc.GroupName = unityobjModel.Title;
-                    sc.ItemName = row.Name;
-                    sc.AllocatedSize = row.BaseSize.Committed;
-                    result.Add(sc);
-                }
-
-                SummaryDataClass memUOD = new SummaryDataClass();   //Memory Usage On Device
-                memUOD.GroupName = residentModel.Title;
-                memUOD.ItemName = "";
-                memUOD.AllocatedSize = residentModel.TotalA;
-                result.Add(memUOD);
-                foreach (var row in residentModel.Rows)
-                {
-                    SummaryDataClass sc = new SummaryDataClass();
-                    sc.GroupName = residentModel.Title;
-                    sc.ItemName = row.Name;
-                    sc.AllocatedSize = row.BaseSize.Resident;
-                    result.Add(sc);
-                }
-                return JsonConvert.SerializeObject(result);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e);
-                return null;
-            }
-        }
-        public string BuildUnityObjectsData()
-        {
-            try
-            {
+                #endregion
+                #region UnityObjectsDataBuild
+                //UnityObjects Build
                 m_AllUnityObjectsModelBuilder = new UnityObjectsModelBuilder();
                 IScopedFilter<string> searchStringFilter = null;
                 ITextFilter unityObjectNameFilter = null;
@@ -238,7 +187,7 @@ namespace Unity.MemoryProfiler.Editor
                 bool flattenHierarchy = false;
                 bool potentialDuplicatesFilter = false;
                 bool disambiguateByInstanceId = false;
-                var args = new UnityObjectsModelBuilder.BuildArgs(
+                var utojsargs = new UnityObjectsModelBuilder.BuildArgs(
                     searchStringFilter,
                     unityObjectNameFilter,
                     unityObjectTypeNameFilter,
@@ -247,13 +196,84 @@ namespace Unity.MemoryProfiler.Editor
                     potentialDuplicatesFilter,
                     disambiguateByInstanceId,
                     ProcessUnityObjectItemSelectedInvoke);
-                var model = m_AllUnityObjectsModelBuilder.Build(m_SnapshotDataService.Base, args);
-                List<UnityObjectClass> result = new List<UnityObjectClass>();
-                var rootNodes = model.RootNodes;
-                if (rootNodes.Count <= 0)
-                    return null;
-                foreach (var node in rootNodes)
+                var utojsmodel = m_AllUnityObjectsModelBuilder.Build(m_SnapshotDataService.Base, utojsargs);
+                #endregion
+                #region AllMemoryDataBuild
+                //AllMemory Build
+                m_AllMemoryModelBuilder = new AllTrackedMemoryModelBuilder();
+                IScopedFilter<string> searchFilter = null;
+                ITextFilter itemNameFilter = null;
+                IEnumerable<ITextFilter> itemPathFilter = null;
+                bool excludeAll = false;
+                bool disambiguateUnityObjects = false;
+                AllTrackedMemoryTableMode m_TableMode = AllTrackedMemoryTableMode.OnlyCommitted;
+                var args = new AllTrackedMemoryModelBuilder.BuildArgs(
+                    searchFilter,
+                    itemNameFilter,
+                    itemPathFilter,
+                    excludeAll,
+                    MemoryProfilerSettings.ShowReservedMemoryBreakdown,
+                    disambiguateUnityObjects,
+                    m_TableMode == AllTrackedMemoryTableMode.OnlyCommitted,
+                    ProcessObjectSelected);
+                var almodel = m_AllMemoryModelBuilder.Build(m_SnapshotDataService.Base, args);
+                #endregion
+                // Unload 释放内存
+                m_SnapshotDataService.Base.Dispose();
+                m_SnapshotDataService.UnloadAll();
+                m_SnapshotDataService.Dispose();
+                // 处理数据并输出json
+                #region SummaryJsonWrite
+                foreach (var row in summaryModel.Rows)
                 {
+                    SummaryDataClass sc = new SummaryDataClass();
+                    sc.GroupName = summaryModel.Title;
+                    sc.ItemName = row.Name;
+                    sc.AllocatedSize = row.BaseSize.Committed;
+                    SummaryWs.Write(JsonConvert.SerializeObject(sc) + ",");
+                }
+                foreach (var row in managedDataModel.Rows)
+                {
+                    SummaryDataClass sc = new SummaryDataClass();
+                    sc.GroupName = managedDataModel.Title;
+                    sc.ItemName = row.Name;
+                    sc.AllocatedSize = row.BaseSize.Committed;
+                    SummaryWs.Write(JsonConvert.SerializeObject(sc) + ",");
+                }
+                foreach (var row in unityobjModel.Rows)
+                {
+                    SummaryDataClass sc = new SummaryDataClass();
+                    sc.GroupName = unityobjModel.Title;
+                    sc.ItemName = row.Name;
+                    sc.AllocatedSize = row.BaseSize.Committed;
+                    SummaryWs.Write(JsonConvert.SerializeObject(sc) + ",");
+                }
+                int SMcount = 0;
+                foreach (var row in residentModel.Rows)
+                {
+                    SMcount += 1;
+                    SummaryDataClass sc = new SummaryDataClass();
+                    sc.GroupName = residentModel.Title;
+                    sc.ItemName = row.Name;
+                    sc.AllocatedSize = row.BaseSize.Resident;
+                    SummaryWs.Write(JsonConvert.SerializeObject(sc));
+                    if (SMcount != residentModel.Rows.Count)
+                    {
+                        SummaryWs.Write(",");
+                    }
+                }
+                SummaryWs.Write("]");
+                SummaryWs.Close();
+                SummaryWs.Dispose();
+                #endregion
+                #region UnityObjectsJsonWrite
+                var UorootNodes = utojsmodel.RootNodes;
+                if (UorootNodes.Count <= 0)
+                    throw new Exception("UnityObjects has no data.");
+                int uocount = 0;
+                foreach (var node in UorootNodes)
+                {
+                    uocount += 1;
                     var data = node.data;
                     UnityObjectClass element = new UnityObjectClass();
                     element.ObjectType = data.Name;
@@ -276,72 +296,292 @@ namespace Unity.MemoryProfiler.Editor
                             element.ChildData.Add(oic);
                         }
                     }
-                    result.Add(element);
-                }
-                return JsonConvert.SerializeObject(result);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e);
-                return null;
-            }
-
-        }
-        public string BuildAllMemoryData()
-        {
-            try
-            {
-                m_AllMemoryModelBuilder = new AllTrackedMemoryModelBuilder();
-                IScopedFilter<string> searchFilter = null;
-                ITextFilter itemNameFilter = null;
-                IEnumerable<ITextFilter> itemPathFilter = null;
-                bool excludeAll = false;
-                bool disambiguateUnityObjects = false;
-                AllTrackedMemoryTableMode m_TableMode = AllTrackedMemoryTableMode.OnlyCommitted;
-                var args = new AllTrackedMemoryModelBuilder.BuildArgs(
-                    searchFilter,
-                    itemNameFilter,
-                    itemPathFilter,
-                    excludeAll,
-                    MemoryProfilerSettings.ShowReservedMemoryBreakdown,
-                    disambiguateUnityObjects,
-                    m_TableMode == AllTrackedMemoryTableMode.OnlyCommitted,
-                    ProcessObjectSelected);
-                var model = m_AllMemoryModelBuilder.Build(m_SnapshotDataService.Base, args);
-                List<AllMemoryClass> result = new List<AllMemoryClass>();
-                var rootNodes = model.RootNodes;
-                if (rootNodes.Count <= 0)
-                    return null;
-                foreach (var node in rootNodes)
-                {
-                    var data = node.data;
-                    switch (data.Name)
+                    uosw.Write(JsonConvert.SerializeObject(element));
+                    if (uocount != UorootNodes.Count)
                     {
-                        case "Untracked*":
-                            GetUntrackedData(node, ref result);
-                            break;
-                        case "Executables & Mapped":
-                            GetExecutablesMappedData(node, ref result);
-                            break;
-                        case "Native":
-                            GetNativeData(node, ref result);
-                            break;
-                        case "Graphics (Estimated)":
-                            GetGraphicsData(node, ref result);
-                            break;
-                        case "Managed":
-                            GetManagedData(node, ref result);
-                            break;
+                        uosw.Write(",");
                     }
                 }
-                return JsonConvert.SerializeObject(result);
+                uosw.Write("]");
+                uosw.Close();
+                uosw.Dispose();
+                uofs.Close();
+                uofs.Dispose();
+                #endregion
+                #region AllMemoryDataJsonWrite
+                var AMrootNodes = almodel.RootNodes;
+                if (AMrootNodes.Count <= 0)
+                    throw new Exception("AllMemoryData has no data.");
+                int alcount = 0;
+                foreach (var node in AMrootNodes)
+                {
+                    if (node.data.Name == "Managed")
+                    {
+                        alcount += 1;
+                        GetManagedData(node, alsw);
+                        if (alcount != AMrootNodes.Count)
+                        {
+                            alsw.Write(",");
+                        }
+                    }
+                    else if (node.data.Name == "Untracked*")
+                    {
+                        alcount += 1;
+                        GetUntrackedData(node, alsw);
+                        if (alcount != AMrootNodes.Count)
+                        {
+                            alsw.Write(",");
+                        }
+                    }
+                    else if (node.data.Name == "Graphics (Estimated)")
+                    {
+                        alcount += 1;
+                        GetGraphicsData(node, alsw);
+                        if (alcount != AMrootNodes.Count)
+                        {
+                            alsw.Write(",");
+                        }
+                    }
+                    else if (node.data.Name == "Native")
+                    {
+                        alcount += 1;
+                        GetNativeData(node, alsw);
+                        if (alcount != AMrootNodes.Count)
+                        {
+                            alsw.Write(",");
+                        }
+                    }
+                    else if (node.data.Name == "Executables & Mapped")
+                    {
+                        alcount += 1;
+                        GetExecutablesMappedData(node, alsw);
+                        if (alcount != AMrootNodes.Count)
+                        {
+                            alsw.Write(",");
+                        }
+                    }
+                }
+                alsw.Write("]");
+                alsw.Close();
+                alsw.Dispose();
+                almfs.Close();
+                almfs.Dispose();
+                #endregion
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
-                return null;
+                Debug.LogError(e.ToString());
+                // Summary
+                SummaryWs.Write("]");
+                SummaryWs.Close();
+                SummaryWs.Dispose();
+                // UnityObjectsData
+                uosw.Write("]");
+                uosw.Close();
+                uosw.Dispose();
+                uofs.Close();
+                uofs.Dispose();
+                // AllMemoryData
+                alsw.Write("]");
+                alsw.Close();
+                alsw.Dispose();
+                almfs.Close();
+                almfs.Dispose();
             }
         }
+
+        //public string BuildSummaryData()
+        //{
+        //    try
+        //    {
+        //        m_SummaryModelBuilder = new AllMemorySummaryModelBuilder(m_SnapshotDataService.Base, null);
+        //        m_ManagedMemoryModelBuilder = new ManagedMemorySummaryModelBuilder(m_SnapshotDataService.Base, null);
+        //        m_UnityObjectsModelBuilder = new UnityObjectsMemorySummaryModelBuilder(m_SnapshotDataService.Base, null);
+        //        m_ResidentModelBuilder = new ResidentMemorySummaryModelBuilder(m_SnapshotDataService.Base, null);
+        //        MemorySummaryModel summaryModel = m_SummaryModelBuilder.Build();  //Summary里的
+        //        MemorySummaryModel managedDataModel = m_ManagedMemoryModelBuilder.Build();  //Summary里的
+        //        MemorySummaryModel unityobjModel = m_UnityObjectsModelBuilder.Build();  //Summary里的
+        //        MemorySummaryModel residentModel = m_ResidentModelBuilder.Build();
+        //        List<SummaryDataClass> result = new List<SummaryDataClass>(30);
+        //        SummaryDataClass amd = new SummaryDataClass();   //Allocated Memory Distribution
+        //        amd.GroupName = summaryModel.Title;
+        //        amd.ItemName = "";
+        //        amd.AllocatedSize = summaryModel.TotalA;
+        //        result.Add(amd);
+        //        foreach (var row in summaryModel.Rows)
+        //        {
+        //            SummaryDataClass sc = new SummaryDataClass();
+        //            sc.GroupName = summaryModel.Title;
+        //            sc.ItemName = row.Name;
+        //            sc.AllocatedSize = row.BaseSize.Committed;
+        //            result.Add(sc);
+        //        }
+
+        //        SummaryDataClass managedHeap = new SummaryDataClass();   //Managed Heap Utilization
+        //        managedHeap.GroupName = managedDataModel.Title;
+        //        managedHeap.ItemName = "";
+        //        managedHeap.AllocatedSize = managedDataModel.TotalA;
+        //        result.Add(managedHeap);
+        //        foreach (var row in managedDataModel.Rows)
+        //        {
+        //            SummaryDataClass sc = new SummaryDataClass();
+        //            sc.GroupName = managedDataModel.Title;
+        //            sc.ItemName = row.Name;
+        //            sc.AllocatedSize = row.BaseSize.Committed;
+        //            result.Add(sc);
+        //        }
+
+        //        SummaryDataClass TopunityData = new SummaryDataClass();   //Top Unity Objects Categories
+        //        TopunityData.GroupName = unityobjModel.Title;
+        //        TopunityData.ItemName = "";
+        //        TopunityData.AllocatedSize = unityobjModel.TotalA;
+        //        result.Add(TopunityData);
+        //        foreach (var row in unityobjModel.Rows)
+        //        {
+        //            SummaryDataClass sc = new SummaryDataClass();
+        //            sc.GroupName = unityobjModel.Title;
+        //            sc.ItemName = row.Name;
+        //            sc.AllocatedSize = row.BaseSize.Committed;
+        //            result.Add(sc);
+        //        }
+
+        //        SummaryDataClass memUOD = new SummaryDataClass();   //Memory Usage On Device
+        //        memUOD.GroupName = residentModel.Title;
+        //        memUOD.ItemName = "";
+        //        memUOD.AllocatedSize = residentModel.TotalA;
+        //        result.Add(memUOD);
+        //        foreach (var row in residentModel.Rows)
+        //        {
+        //            SummaryDataClass sc = new SummaryDataClass();
+        //            sc.GroupName = residentModel.Title;
+        //            sc.ItemName = row.Name;
+        //            sc.AllocatedSize = row.BaseSize.Resident;
+        //            result.Add(sc);
+        //        }
+        //        return JsonConvert.SerializeObject(result);
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Debug.LogError(e);
+        //        return null;
+        //    }
+        //}
+        //public string BuildUnityObjectsData()
+        //{
+        //    try
+        //    {
+        //        m_AllUnityObjectsModelBuilder = new UnityObjectsModelBuilder();
+        //        IScopedFilter<string> searchStringFilter = null;
+        //        ITextFilter unityObjectNameFilter = null;
+        //        ITextFilter unityObjectTypeNameFilter = null;
+        //        IInstancIdFilter unityObjectInstanceIdFilter = null;
+        //        bool flattenHierarchy = false;
+        //        bool potentialDuplicatesFilter = false;
+        //        bool disambiguateByInstanceId = false;
+        //        var args = new UnityObjectsModelBuilder.BuildArgs(
+        //            searchStringFilter,
+        //            unityObjectNameFilter,
+        //            unityObjectTypeNameFilter,
+        //            unityObjectInstanceIdFilter,
+        //            flattenHierarchy,
+        //            potentialDuplicatesFilter,
+        //            disambiguateByInstanceId,
+        //            ProcessUnityObjectItemSelectedInvoke);
+        //        var model = m_AllUnityObjectsModelBuilder.Build(m_SnapshotDataService.Base, args);
+        //        List<UnityObjectClass> result = new List<UnityObjectClass>();
+        //        var rootNodes = model.RootNodes;
+        //        if (rootNodes.Count <= 0)
+        //            return null;
+        //        foreach (var node in rootNodes)
+        //        {
+        //            var data = node.data;
+        //            UnityObjectClass element = new UnityObjectClass();
+        //            element.ObjectType = data.Name;
+        //            element.AllocateSize = data.TotalSize.Committed;
+        //            element.NativeSize = data.NativeSize.Committed;
+        //            element.ManagedSize = data.ManagedSize.Committed;
+        //            element.GraphicsSize = data.GpuSize.Committed;
+        //            element.ChildData = new List<ObjectItemClass>();
+        //            if (node.hasChildren)
+        //            {
+        //                foreach (var child in node.children)
+        //                {
+        //                    var childData = child.data;
+        //                    ObjectItemClass oic = new ObjectItemClass();
+        //                    oic.Name = string.IsNullOrEmpty(childData.Name) ? "<No Name>" : childData.Name;
+        //                    oic.AllocateSize = childData.TotalSize.Committed;
+        //                    oic.NativeSize = childData.NativeSize.Committed;
+        //                    oic.ManagedSize = childData.ManagedSize.Committed;
+        //                    oic.GraphicsSize = childData.GpuSize.Committed;
+        //                    element.ChildData.Add(oic);
+        //                }
+        //            }
+        //            result.Add(element);
+        //        }
+        //        return JsonConvert.SerializeObject(result);
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Debug.LogError(e);
+        //        return null;
+        //    }
+
+        //}
+        //public string BuildAllMemoryData()
+        //{
+        //    try
+        //    {
+        //        m_AllMemoryModelBuilder = new AllTrackedMemoryModelBuilder();
+        //        IScopedFilter<string> searchFilter = null;
+        //        ITextFilter itemNameFilter = null;
+        //        IEnumerable<ITextFilter> itemPathFilter = null;
+        //        bool excludeAll = false;
+        //        bool disambiguateUnityObjects = false;
+        //        AllTrackedMemoryTableMode m_TableMode = AllTrackedMemoryTableMode.OnlyCommitted;
+        //        var args = new AllTrackedMemoryModelBuilder.BuildArgs(
+        //            searchFilter,
+        //            itemNameFilter,
+        //            itemPathFilter,
+        //            excludeAll,
+        //            MemoryProfilerSettings.ShowReservedMemoryBreakdown,
+        //            disambiguateUnityObjects,
+        //            m_TableMode == AllTrackedMemoryTableMode.OnlyCommitted,
+        //            ProcessObjectSelected);
+        //        var model = m_AllMemoryModelBuilder.Build(m_SnapshotDataService.Base, args);
+        //        List<AllMemoryClass> result = new List<AllMemoryClass>();
+        //        var rootNodes = model.RootNodes;
+        //        if (rootNodes.Count <= 0)
+        //            return null;
+        //        foreach (var node in rootNodes)
+        //        {
+        //            var data = node.data;
+        //            switch (data.Name)
+        //            {
+        //                case "Untracked*":
+        //                    GetUntrackedData(node, ref result);
+        //                    break;
+        //                case "Executables & Mapped":
+        //                    GetExecutablesMappedData(node, ref result);
+        //                    break;
+        //                case "Native":
+        //                    GetNativeData(node, ref result);
+        //                    break;
+        //                case "Graphics (Estimated)":
+        //                    GetGraphicsData(node, ref result);
+        //                    break;
+        //                case "Managed":
+        //                    GetManagedData(node, ref result);
+        //                    break;
+        //            }
+        //        }
+        //        return JsonConvert.SerializeObject(result);
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Debug.LogError(e);
+        //        return null;
+        //    }
+        //}
         public void BuildStackReferenceData(in string resFilePath)
         {
             var processor = new ManagedDateProcessor<TreeViewItemData<AllTrackedMemoryModel.ItemData>>(ManagedThreadCount, ProcessManagedDatas, resFilePath);
@@ -353,7 +593,7 @@ namespace Unity.MemoryProfiler.Editor
             }
             processor.EndProcess();
         }
-        void GetUntrackedData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, ref List<AllMemoryClass> result)
+        void GetUntrackedData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, StreamWriter fs)
         {
             AllMemoryClass element = new AllMemoryClass();
             element.GroupName = node.data.Name;
@@ -371,18 +611,10 @@ namespace Unity.MemoryProfiler.Editor
                 subData.SubData = new List<SubMemoryData>();
                 element.SubData.Add(subData);
             }
-            result.Add(element);
+            fs.Write(JsonConvert.SerializeObject(element));
         }
-        void GetExecutablesMappedData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, ref List<AllMemoryClass> result)
+        void GetExecutablesMappedData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, StreamWriter fs)
         {
-            // 需要统计dxcache的内存大小， 其他dll总大小
-            var dxCaches = node.children.Where(item => item.data.Name.Contains("DXCache")).ToList();
-            ulong dxSize = 0;
-            foreach (var childNode in dxCaches)
-            {
-                dxSize += childNode.data.Size.Committed;
-            }
-
             var data = node.data;
             AllMemoryClass element = new AllMemoryClass();
             element.GroupName = data.Name;
@@ -390,23 +622,26 @@ namespace Unity.MemoryProfiler.Editor
             element.ChildCount = data.ChildCount;
             element.Count = 1;
             element.SubData = new List<SubMemoryData>();
-            SubMemoryData subData1 = new SubMemoryData();
-            subData1.ItemName = "DxCache";
-            subData1.AllocateSize = dxSize;
-            subData1.Count = 1;
-            subData1.ChildCount = dxCaches.Count;
-            subData1.SubData = new List<SubMemoryData>();
-            element.SubData.Add(subData1);
-            SubMemoryData subData2 = new SubMemoryData();
-            subData2.ItemName = "Other Dll";
-            subData2.AllocateSize = data.Size.Committed - dxSize;
-            subData2.Count = 1;
-            subData2.ChildCount = data.ChildCount - dxCaches.Count;
-            subData2.SubData = new List<SubMemoryData>();
-            element.SubData.Add(subData2);
-            result.Add(element);
+            if (node.data.ChildCount == 0)
+            {
+                fs.Write(JsonConvert.SerializeObject(element));
+            }
+            else
+            {
+                foreach (var subItemData in node.children)
+                {
+                    SubMemoryData sub = new SubMemoryData();
+                    sub.Count = 1;
+                    sub.AllocateSize = subItemData.data.Size.Committed;
+                    sub.ChildCount = subItemData.data.ChildCount;
+                    sub.SubData = new List<SubMemoryData>();
+                    sub.ItemName = subItemData.data.Name;
+                    element.SubData.Add(sub);
+                }
+                fs.Write(JsonConvert.SerializeObject(element));
+            }
         }
-        void GetNativeData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, ref List<AllMemoryClass> result)
+        void GetNativeData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, StreamWriter fs)
         {
             var data = node.data;
             AllMemoryClass element = new AllMemoryClass();
@@ -489,9 +724,9 @@ namespace Unity.MemoryProfiler.Editor
                 }
                 element.SubData.Add(sub);
             }
-            result.Add(element);
+            fs.Write(JsonConvert.SerializeObject(element));
         }
-        void GetGraphicsData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, ref List<AllMemoryClass> result)
+        void GetGraphicsData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, StreamWriter fs)
         {
             // 导出 gfx 和 computerbuffers
             var data = node.data;
@@ -565,9 +800,9 @@ namespace Unity.MemoryProfiler.Editor
                     }
                 }
             }
-            result.Add(element);
+            fs.Write(JsonConvert.SerializeObject(element));
         }
-        void GetManagedData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, ref List<AllMemoryClass> result)
+        void GetManagedData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, StreamWriter fs)
         {
             stackDatas = new List<TreeViewItemData<AllTrackedMemoryModel.ItemData>>();
             AllMemoryClass element = new AllMemoryClass();
@@ -597,8 +832,8 @@ namespace Unity.MemoryProfiler.Editor
                     subData.AllocateSize = data.Size.Committed;
                     subData.ChildCount = data.ChildCount;
                     subData.SubData = new List<SubMemoryData>();
-                    //提炼Top20子元素数据
-                    //int getCount = 0;
+                    //提炼Top50子元素数据
+                    int getCount = 0;
                     foreach (var child in nodeChild.children)
                     {
                         SubMemoryData sub = new SubMemoryData();
@@ -609,17 +844,17 @@ namespace Unity.MemoryProfiler.Editor
                         sub.SubData = new List<SubMemoryData>();
                         subData.SubData.Add(sub);
                         stackDatas.Add(child);
-                        // getCount += 1;
-                        // if (getCount>=20)
-                        // {
-                        //     break;
-                        // }
+                        getCount += 1;
+                        if (getCount >= 50)
+                        {
+                            break;
+                        }
                     }
                     subData.Count = 1;
                     element.SubData.Add(subData);
                 }
             }
-            result.Add(element);
+            fs.Write(JsonConvert.SerializeObject(element));
         }
         internal void ProcessManagedDatas(List<TreeViewItemData<AllTrackedMemoryModel.ItemData>> managedObjects, string managedType, ManagedObjectData managedObject, StreamWriter writer, int start, int end)
         {

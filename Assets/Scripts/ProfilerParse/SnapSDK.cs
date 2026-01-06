@@ -144,13 +144,8 @@ internal class SnapSDK
         Debug.Log("输出结果数据----");
         try
         {
-            var summaryJson = mp_windows.BuildSummaryData();
-            var unityObjectsJson = mp_windows.BuildUnityObjectsData();
-            var allMemoryJson = mp_windows.BuildAllMemoryData();
-            WriteResultFile(SummaryJsonPath, summaryJson);
-            WriteResultFile(UnityObjectsJsonPath, unityObjectsJson);
-            WriteResultFile(AllMemoryDatajsonPath, allMemoryJson);
-            mp_windows.BuildStackReferenceData(FunReferenceDataPath);
+            mp_windows.BuildAllData(SummaryJsonPath, UnityObjectsJsonPath, AllMemoryDatajsonPath);
+            // mp_windows.BuildStackReferenceData(FunReferenceDataPath); 性能较低，先不开这个
             Debug.Log("解析Memory完毕----");
         }
         catch (Exception e)
