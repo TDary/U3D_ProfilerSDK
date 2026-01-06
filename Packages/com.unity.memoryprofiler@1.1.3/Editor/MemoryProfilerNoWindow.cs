@@ -154,15 +154,15 @@ namespace Unity.MemoryProfiler.Editor
         public void BuildAllData(string SummaryJsonPath, string UnityObjectJsonPath, string AllMemoryJsonPath)
         {
             // Summary
-            StreamWriter SummaryWs = new StreamWriter(SummaryJsonPath, true, System.Text.Encoding.UTF8);
+            StreamWriter SummaryWs = new StreamWriter(SummaryJsonPath, true, new System.Text.UTF8Encoding(false));
             SummaryWs.Write("[");
             // UnityObjects
             var uofs = new FileStream(UnityObjectJsonPath, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 716800);
-            StreamWriter uosw = new StreamWriter(uofs, System.Text.Encoding.UTF8, bufferSize: 358400);
+            StreamWriter uosw = new StreamWriter(uofs, new System.Text.UTF8Encoding(false), bufferSize: 358400);
             uosw.Write("[");
             // AllMemory
             var almfs = new FileStream(AllMemoryJsonPath, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 716800);
-            StreamWriter alsw = new StreamWriter(almfs, System.Text.Encoding.UTF8, bufferSize: 358400);
+            StreamWriter alsw = new StreamWriter(almfs, new System.Text.UTF8Encoding(false), bufferSize: 358400);
             alsw.Write("[");
             try
             {
