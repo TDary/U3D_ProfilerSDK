@@ -224,6 +224,11 @@ namespace Unity.MemoryProfiler.Editor
                 m_SnapshotDataService.Dispose();
                 // 处理数据并输出json
                 #region SummaryJsonWrite
+                SummaryDataClass amd = new SummaryDataClass();   //Allocated Memory Distribution
+                amd.GroupName = summaryModel.Title;
+                amd.ItemName = "";
+                amd.AllocatedSize = summaryModel.TotalA;
+                SummaryWs.Write(JsonConvert.SerializeObject(amd) + ",");
                 foreach (var row in summaryModel.Rows)
                 {
                     SummaryDataClass sc = new SummaryDataClass();
@@ -232,6 +237,11 @@ namespace Unity.MemoryProfiler.Editor
                     sc.AllocatedSize = row.BaseSize.Committed;
                     SummaryWs.Write(JsonConvert.SerializeObject(sc) + ",");
                 }
+                SummaryDataClass managedHeap = new SummaryDataClass();   //Managed Heap Utilization
+                managedHeap.GroupName = managedDataModel.Title;
+                managedHeap.ItemName = "";
+                managedHeap.AllocatedSize = managedDataModel.TotalA;
+                SummaryWs.Write(JsonConvert.SerializeObject(managedHeap) + ",");
                 foreach (var row in managedDataModel.Rows)
                 {
                     SummaryDataClass sc = new SummaryDataClass();
@@ -240,6 +250,11 @@ namespace Unity.MemoryProfiler.Editor
                     sc.AllocatedSize = row.BaseSize.Committed;
                     SummaryWs.Write(JsonConvert.SerializeObject(sc) + ",");
                 }
+                SummaryDataClass TopunityData = new SummaryDataClass();   //Top Unity Objects Categories
+                TopunityData.GroupName = unityobjModel.Title;
+                TopunityData.ItemName = "";
+                TopunityData.AllocatedSize = unityobjModel.TotalA;
+                SummaryWs.Write(JsonConvert.SerializeObject(TopunityData) + ",");
                 foreach (var row in unityobjModel.Rows)
                 {
                     SummaryDataClass sc = new SummaryDataClass();
@@ -248,6 +263,11 @@ namespace Unity.MemoryProfiler.Editor
                     sc.AllocatedSize = row.BaseSize.Committed;
                     SummaryWs.Write(JsonConvert.SerializeObject(sc) + ",");
                 }
+                SummaryDataClass memUOD = new SummaryDataClass();   //Memory Usage On Device
+                memUOD.GroupName = residentModel.Title;
+                memUOD.ItemName = "";
+                memUOD.AllocatedSize = residentModel.TotalA;
+                SummaryWs.Write(JsonConvert.SerializeObject(memUOD) + ",");
                 int SMcount = 0;
                 foreach (var row in residentModel.Rows)
                 {
@@ -355,6 +375,14 @@ namespace Unity.MemoryProfiler.Editor
                     {
                         alcount += 1;
                         GetExecutablesMappedData(node, alsw);
+                        if (alcount != AMrootNodes.Count)
+                        {
+                            alsw.Write(",");
+                        }
+                    }
+                    {
+                        alcount += 1;
+                        GetOtherData(node, alsw);
                         if (alcount != AMrootNodes.Count)
                         {
                             alsw.Write(",");
@@ -853,6 +881,27 @@ namespace Unity.MemoryProfiler.Editor
                     subData.Count = 1;
                     element.SubData.Add(subData);
                 }
+            }
+            fs.Write(JsonConvert.SerializeObject(element));
+        }
+        void GetOtherData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, StreamWriter fs)
+        {
+            var data = node.data;
+            AllMemoryClass element = new AllMemoryClass();
+            element.GroupName = data.Name;
+            element.Count = 1;
+            element.AllocateSize = data.Size.Committed;
+            element.ChildCount = data.ChildCount;
+            element.SubData = new List<SubMemoryData>();
+            foreach (var subItemData in node.children)
+            {
+                SubMemoryData sub = new SubMemoryData();
+                sub.Count = 1;
+                sub.AllocateSize = subItemData.data.Size.Committed;
+                sub.ChildCount = subItemData.data.ChildCount;
+                sub.SubData = new List<SubMemoryData>();
+                sub.ItemName = subItemData.data.Name;
+                element.SubData.Add(sub);
             }
             fs.Write(JsonConvert.SerializeObject(element));
         }
