@@ -153,6 +153,19 @@ namespace Unity.MemoryProfiler.Editor
 
         public void BuildAllData(string SummaryJsonPath, string UnityObjectJsonPath, string AllMemoryJsonPath)
         {
+            // 先删除一下之前残留的旧数据（如果有的话）
+            if (File.Exists(SummaryJsonPath))
+            {
+                File.Delete(SummaryJsonPath);
+            }
+            if (File.Exists(UnityObjectJsonPath))
+            {
+                File.Delete(UnityObjectJsonPath);
+            }
+            if (File.Exists(AllMemoryJsonPath))
+            {
+                File.Delete(AllMemoryJsonPath);
+            }
             // Summary
             StreamWriter SummaryWs = new StreamWriter(SummaryJsonPath, true, new System.Text.UTF8Encoding(false));
             SummaryWs.Write("[");
