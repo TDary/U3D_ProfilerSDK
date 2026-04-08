@@ -151,6 +151,189 @@ namespace Unity.MemoryProfiler.Editor
         static int RefMaxDepth = 5;   //最大引用深度
         static int ManagedThreadCount = 4;
 
+        // 生成csv格式数据
+        public void BuildAllData(string summaryFilePath, string unityObjFilePath, string allMemoryFilePath, string stackRefFilePath = null)
+        {
+            // 先删除一下之前残留的旧数据（如果有的话）
+            if (File.Exists(summaryFilePath))
+            {
+                File.Delete(summaryFilePath);
+            }
+            if (File.Exists(unityObjFilePath))
+            {
+                File.Delete(unityObjFilePath);
+            }
+            if (File.Exists(allMemoryFilePath))
+            {
+                File.Delete(allMemoryFilePath);
+            }
+            // Summary
+            StreamWriter SummaryWs = new StreamWriter(summaryFilePath, true, new System.Text.UTF8Encoding(false));
+            // UnityObjects
+            var uofs = new FileStream(unityObjFilePath, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 716800);
+            StreamWriter uosw = new StreamWriter(uofs, new System.Text.UTF8Encoding(false), bufferSize: 358400);
+            // AllMemory
+            var almfs = new FileStream(allMemoryFilePath, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 716800);
+            StreamWriter alsw = new StreamWriter(almfs, new System.Text.UTF8Encoding(false), bufferSize: 358400);
+            try
+            {
+                #region SummaryDataBuild
+                //SummryData Build
+                m_SummaryModelBuilder = new AllMemorySummaryModelBuilder(m_SnapshotDataService.Base, null);
+                m_ManagedMemoryModelBuilder = new ManagedMemorySummaryModelBuilder(m_SnapshotDataService.Base, null);
+                m_UnityObjectsModelBuilder = new UnityObjectsMemorySummaryModelBuilder(m_SnapshotDataService.Base, null);
+                m_ResidentModelBuilder = new ResidentMemorySummaryModelBuilder(m_SnapshotDataService.Base, null);
+                MemorySummaryModel summaryModel = m_SummaryModelBuilder.Build();  //Summary里的
+                MemorySummaryModel managedDataModel = m_ManagedMemoryModelBuilder.Build();  //Summary里的
+                MemorySummaryModel unityobjModel = m_UnityObjectsModelBuilder.Build();  //Summary里的
+                MemorySummaryModel residentModel = m_ResidentModelBuilder.Build();
+                #endregion
+                #region UnityObjectsDataBuild
+                //UnityObjects Build
+                m_AllUnityObjectsModelBuilder = new UnityObjectsModelBuilder();
+                IScopedFilter<string> searchStringFilter = null;
+                ITextFilter unityObjectNameFilter = null;
+                ITextFilter unityObjectTypeNameFilter = null;
+                IInstancIdFilter unityObjectInstanceIdFilter = null;
+                bool flattenHierarchy = false;
+                bool potentialDuplicatesFilter = false;
+                bool disambiguateByInstanceId = false;
+                var utojsargs = new UnityObjectsModelBuilder.BuildArgs(
+                    searchStringFilter,
+                    unityObjectNameFilter,
+                    unityObjectTypeNameFilter,
+                    unityObjectInstanceIdFilter,
+                    flattenHierarchy,
+                    potentialDuplicatesFilter,
+                    disambiguateByInstanceId,
+                    ProcessUnityObjectItemSelectedInvoke);
+                var utojsmodel = m_AllUnityObjectsModelBuilder.Build(m_SnapshotDataService.Base, utojsargs);
+                #endregion
+                #region AllMemoryDataBuild
+                //AllMemory Build
+                m_AllMemoryModelBuilder = new AllTrackedMemoryModelBuilder();
+                IScopedFilter<string> searchFilter = null;
+                ITextFilter itemNameFilter = null;
+                IEnumerable<ITextFilter> itemPathFilter = null;
+                bool excludeAll = false;
+                bool disambiguateUnityObjects = false;
+                AllTrackedMemoryTableMode m_TableMode = AllTrackedMemoryTableMode.OnlyCommitted;
+                var args = new AllTrackedMemoryModelBuilder.BuildArgs(
+                    searchFilter,
+                    itemNameFilter,
+                    itemPathFilter,
+                    excludeAll,
+                    MemoryProfilerSettings.ShowReservedMemoryBreakdown,
+                    disambiguateUnityObjects,
+                    m_TableMode == AllTrackedMemoryTableMode.OnlyCommitted,
+                    ProcessObjectSelected);
+                var almodel = m_AllMemoryModelBuilder.Build(m_SnapshotDataService.Base, args);
+                #endregion
+                // 处理数据并输出csv
+                #region SummaryJsonWrite
+                SummaryWs.WriteLine("GroupName,ResourceItemName,AllocatedSize");
+                foreach (var row in summaryModel.Rows) //Allocated Memory Distribution
+                {
+                    SummaryWs.WriteLine($"{summaryModel.Title},{row.Name},{row.BaseSize.Committed}");
+                }
+                foreach (var row in managedDataModel.Rows)  //Managed Heap Utilization
+                {
+                    SummaryWs.WriteLine($"{managedDataModel.Title},{row.Name},{row.BaseSize.Committed}");
+                }
+                foreach (var row in unityobjModel.Rows)  //Top Unity Objects Categories
+                {
+                    SummaryWs.WriteLine($"{unityobjModel.Title},{row.Name},{row.BaseSize.Committed}");
+                }
+                foreach (var row in residentModel.Rows)  //Memory Usage On Device
+                {
+                    SummaryWs.WriteLine($"{residentModel.Title},{row.Name},{row.BaseSize.Committed}");
+                }
+                SummaryWs.Close();
+                SummaryWs.Dispose();
+                #endregion
+                #region UnityObjectsCsvWrite
+                uosw.WriteLine("UnityObjectType,ResourceItemName,InstanceId,AllocatedSize,NativeSize,ManagedSize,GraphicsSize");
+                var UorootNodes = utojsmodel.RootNodes;
+                if (UorootNodes.Count <= 0)
+                    throw new Exception("UnityObjects has no data.");
+                foreach (var node in UorootNodes)
+                {
+                    if (node.hasChildren)
+                    {
+                        foreach (var child in node.children)
+                        {
+                            var childData = child.data;
+                            string name = string.IsNullOrEmpty(childData.Name) ? "<No Name>" : childData.Name;
+                            var instanceid = childData.Source.Id == CachedSnapshot.SourceIndex.SourceId.NativeObject
+                                ? m_SnapshotDataService.Base.NativeObjects.InstanceId[childData.Source.Index]
+                                : CachedSnapshot.NativeObjectEntriesCache.InstanceIDNone;
+                            uosw.WriteLine($"{node.data.Name},{name},{instanceid},{childData.TotalSize.Committed},{childData.NativeSize.Committed},{childData.ManagedSize.Committed},{childData.GpuSize.Committed}");
+                        }
+                    }
+                }
+                uosw.Close();
+                uosw.Dispose();
+                uofs.Close();
+                uofs.Dispose();
+                #endregion
+                // Unload 释放内存
+                m_SnapshotDataService.Base.Dispose();
+                m_SnapshotDataService.UnloadAll();
+                m_SnapshotDataService.Dispose();
+                #region AllMemoryDataCsvWrite
+                alsw.WriteLine("GroupName,SubGroupName,ResourceItemName,Size");
+                var AMrootNodes = almodel.RootNodes;
+                if (AMrootNodes.Count <= 0)
+                    throw new Exception("AllMemoryData has no data.");
+                foreach (var node in AMrootNodes)
+                {
+                    if (node.data.Name == "Managed")
+                    {
+                        GetManagedData(node, alsw);
+                    }
+                    else if (node.data.Name == "Untracked*")
+                    {
+                        GetUntrackedData(node, alsw);
+                    }
+                    else if (node.data.Name == "Graphics (Estimated)")
+                    {
+                        GetGraphicsData(node, alsw);
+                    }
+                    else if (node.data.Name == "Native")
+                    {
+                        GetNativeData(node, alsw);
+                    }
+                    else if (node.data.Name == "Executables & Mapped")
+                    {
+                        GetExecutablesMappedData(node, alsw);
+                    }
+                    else
+                    {
+                        GetOtherData(node, alsw);
+                    }
+                }
+                alsw.Close();
+                alsw.Dispose();
+                almfs.Close();
+                almfs.Dispose();
+                #endregion
+            }
+            catch (Exception e)
+            {
+                SummaryWs.Close();
+                SummaryWs.Dispose();
+                uosw.Close();
+                uosw.Dispose();
+                uofs.Close();
+                uofs.Dispose();
+                alsw.Close();
+                alsw.Dispose();
+                almfs.Close();
+                almfs.Dispose();
+                Debug.LogError(e);
+            }
+        }
+
         public void BuildAllData(string SummaryJsonPath, string UnityObjectJsonPath, string AllMemoryJsonPath)
         {
             // 先删除一下之前残留的旧数据（如果有的话）
