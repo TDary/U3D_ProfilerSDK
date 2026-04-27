@@ -19,15 +19,12 @@ internal static class SHttpSender
             request.Method = "GET";
             request.Accept = "*/*";
             HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            Stream getStream = response.GetResponseStream();
-            StreamReader streamreader = new StreamReader(getStream);
-            string result = streamreader.ReadToEnd();
-            request.Abort();
-            response.Close();
-            return result;
-
-            //string Response = Sender.Get(url);
-            //return Response;
+            using (Stream getStream = response.GetResponseStream())
+            using (StreamReader streamreader = new StreamReader(getStream))
+            {
+                string result = streamreader.ReadToEnd();
+                return result;
+            }
         }
         catch (TimeoutException e)
         {

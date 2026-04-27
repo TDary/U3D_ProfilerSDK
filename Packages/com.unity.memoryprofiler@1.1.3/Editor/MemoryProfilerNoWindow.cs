@@ -151,6 +151,18 @@ namespace Unity.MemoryProfiler.Editor
         static int RefMaxDepth = 5;   //最大引用深度
         static int ManagedThreadCount = 4;
 
+        /// <summary>
+        /// 流式写入JSON，避免 JsonConvert.SerializeObject 产生大量临时字符串
+        /// </summary>
+        void WriteJsonToStream<T>(StreamWriter writer, T obj)
+        {
+            using (var jsonWriter = new JsonTextWriter(writer) { CloseOutput = false })
+            {
+                var serializer = new JsonSerializer();
+                serializer.Serialize(jsonWriter, obj);
+            }
+        }
+
         // 生成csv格式数据
         public void BuildAllData(string summaryFilePath, string unityObjFilePath, string allMemoryFilePath, string stackRefFilePath = null)
         {
@@ -332,6 +344,19 @@ namespace Unity.MemoryProfiler.Editor
                 almfs.Dispose();
                 Debug.LogError(e);
             }
+            finally
+            {
+                // 释放 ModelBuilder 引用，帮助 GC 回收大对象
+                m_SummaryModelBuilder = null;
+                m_ManagedMemoryModelBuilder = null;
+                m_UnityObjectsModelBuilder = null;
+                m_ResidentModelBuilder = null;
+                m_AllUnityObjectsModelBuilder = null;
+                m_AllMemoryModelBuilder = null;
+                stackDatas = null;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
         }
 
         public void BuildAllData(string SummaryJsonPath, string UnityObjectJsonPath, string AllMemoryJsonPath)
@@ -424,46 +449,53 @@ namespace Unity.MemoryProfiler.Editor
                 amd.GroupName = summaryModel.Title;
                 amd.ItemName = "";
                 amd.AllocatedSize = summaryModel.TotalA;
-                SummaryWs.Write(JsonConvert.SerializeObject(amd) + ",");
+                WriteJsonToStream(SummaryWs, amd);
+                SummaryWs.Write(",");
                 foreach (var row in summaryModel.Rows)
                 {
                     SummaryDataClass sc = new SummaryDataClass();
                     sc.GroupName = summaryModel.Title;
                     sc.ItemName = row.Name;
                     sc.AllocatedSize = row.BaseSize.Committed;
-                    SummaryWs.Write(JsonConvert.SerializeObject(sc) + ",");
+                    WriteJsonToStream(SummaryWs, sc);
+                    SummaryWs.Write(",");
                 }
                 SummaryDataClass managedHeap = new SummaryDataClass();   //Managed Heap Utilization
                 managedHeap.GroupName = managedDataModel.Title;
                 managedHeap.ItemName = "";
                 managedHeap.AllocatedSize = managedDataModel.TotalA;
-                SummaryWs.Write(JsonConvert.SerializeObject(managedHeap) + ",");
+                WriteJsonToStream(SummaryWs, managedHeap);
+                SummaryWs.Write(",");
                 foreach (var row in managedDataModel.Rows)
                 {
                     SummaryDataClass sc = new SummaryDataClass();
                     sc.GroupName = managedDataModel.Title;
                     sc.ItemName = row.Name;
                     sc.AllocatedSize = row.BaseSize.Committed;
-                    SummaryWs.Write(JsonConvert.SerializeObject(sc) + ",");
+                    WriteJsonToStream(SummaryWs, sc);
+                    SummaryWs.Write(",");
                 }
                 SummaryDataClass TopunityData = new SummaryDataClass();   //Top Unity Objects Categories
                 TopunityData.GroupName = unityobjModel.Title;
                 TopunityData.ItemName = "";
                 TopunityData.AllocatedSize = unityobjModel.TotalA;
-                SummaryWs.Write(JsonConvert.SerializeObject(TopunityData) + ",");
+                WriteJsonToStream(SummaryWs, TopunityData);
+                SummaryWs.Write(",");
                 foreach (var row in unityobjModel.Rows)
                 {
                     SummaryDataClass sc = new SummaryDataClass();
                     sc.GroupName = unityobjModel.Title;
                     sc.ItemName = row.Name;
                     sc.AllocatedSize = row.BaseSize.Committed;
-                    SummaryWs.Write(JsonConvert.SerializeObject(sc) + ",");
+                    WriteJsonToStream(SummaryWs, sc);
+                    SummaryWs.Write(",");
                 }
                 SummaryDataClass memUOD = new SummaryDataClass();   //Memory Usage On Device
-                memUOD.GroupName = residentModel.Title;
+             memUOD.GroupName = residentModel.Title;
                 memUOD.ItemName = "";
                 memUOD.AllocatedSize = residentModel.TotalA;
-                SummaryWs.Write(JsonConvert.SerializeObject(memUOD) + ",");
+                WriteJsonToStream(SummaryWs, memUOD);
+                SummaryWs.Write(",");
                 int SMcount = 0;
                 foreach (var row in residentModel.Rows)
                 {
@@ -472,7 +504,7 @@ namespace Unity.MemoryProfiler.Editor
                     sc.GroupName = residentModel.Title;
                     sc.ItemName = row.Name;
                     sc.AllocatedSize = row.BaseSize.Resident;
-                    SummaryWs.Write(JsonConvert.SerializeObject(sc));
+                    WriteJsonToStream(SummaryWs, sc);
                     if (SMcount != residentModel.Rows.Count)
                     {
                         SummaryWs.Write(",");
@@ -512,7 +544,7 @@ namespace Unity.MemoryProfiler.Editor
                             element.ChildData.Add(oic);
                         }
                     }
-                    uosw.Write(JsonConvert.SerializeObject(element));
+                    WriteJsonToStream(uosw, element);
                     if (uocount != UorootNodes.Count)
                     {
                         uosw.Write(",");
@@ -576,6 +608,7 @@ namespace Unity.MemoryProfiler.Editor
                             alsw.Write(",");
                         }
                     }
+                    else
                     {
                         alcount += 1;
                         GetOtherData(node, alsw);
@@ -611,6 +644,19 @@ namespace Unity.MemoryProfiler.Editor
                 alsw.Dispose();
                 almfs.Close();
                 almfs.Dispose();
+            }
+            finally
+            {
+                // 释放 ModelBuilder 引用，帮助 GC 回收大对象
+                m_SummaryModelBuilder = null;
+                m_ManagedMemoryModelBuilder = null;
+                m_UnityObjectsModelBuilder = null;
+                m_ResidentModelBuilder = null;
+                m_AllUnityObjectsModelBuilder = null;
+                m_AllMemoryModelBuilder = null;
+                stackDatas = null;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
             }
         }
 
@@ -835,7 +881,7 @@ namespace Unity.MemoryProfiler.Editor
                 subData.SubData = new List<SubMemoryData>();
                 element.SubData.Add(subData);
             }
-            fs.Write(JsonConvert.SerializeObject(element));
+            WriteJsonToStream(fs, element);
         }
         void GetExecutablesMappedData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, StreamWriter fs)
         {
@@ -848,7 +894,7 @@ namespace Unity.MemoryProfiler.Editor
             element.SubData = new List<SubMemoryData>();
             if (node.data.ChildCount == 0)
             {
-                fs.Write(JsonConvert.SerializeObject(element));
+                WriteJsonToStream(fs, element);
             }
             else
             {
@@ -862,7 +908,7 @@ namespace Unity.MemoryProfiler.Editor
                     sub.ItemName = subItemData.data.Name;
                     element.SubData.Add(sub);
                 }
-                fs.Write(JsonConvert.SerializeObject(element));
+                WriteJsonToStream(fs, element);
             }
         }
         void GetNativeData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, StreamWriter fs)
@@ -948,7 +994,7 @@ namespace Unity.MemoryProfiler.Editor
                 }
                 element.SubData.Add(sub);
             }
-            fs.Write(JsonConvert.SerializeObject(element));
+            WriteJsonToStream(fs, element);
         }
         void GetGraphicsData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, StreamWriter fs)
         {
@@ -1024,7 +1070,7 @@ namespace Unity.MemoryProfiler.Editor
                     }
                 }
             }
-            fs.Write(JsonConvert.SerializeObject(element));
+            WriteJsonToStream(fs, element);
         }
         void GetManagedData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, StreamWriter fs)
         {
@@ -1078,7 +1124,7 @@ namespace Unity.MemoryProfiler.Editor
                     element.SubData.Add(subData);
                 }
             }
-            fs.Write(JsonConvert.SerializeObject(element));
+            WriteJsonToStream(fs, element);
         }
         void GetOtherData(TreeViewItemData<AllTrackedMemoryModel.ItemData> node, StreamWriter fs)
         {
@@ -1099,7 +1145,7 @@ namespace Unity.MemoryProfiler.Editor
                 sub.ItemName = subItemData.data.Name;
                 element.SubData.Add(sub);
             }
-            fs.Write(JsonConvert.SerializeObject(element));
+            WriteJsonToStream(fs, element);
         }
         internal void ProcessManagedDatas(List<TreeViewItemData<AllTrackedMemoryModel.ItemData>> managedObjects, string managedType, ManagedObjectData managedObject, StreamWriter writer, int start, int end)
         {
@@ -1129,7 +1175,8 @@ namespace Unity.MemoryProfiler.Editor
                     SetOtherDepthRef(firstReferencer, 1, RefMaxDepth, managedObject.Referencer);
                 }
 
-                writer.WriteLine(JsonConvert.SerializeObject(managedObject));
+                WriteJsonToStream(writer, managedObject);
+                writer.WriteLine();
             }
         }
 
